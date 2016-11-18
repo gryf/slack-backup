@@ -105,3 +105,19 @@ class User(BaseObject):
         self.tz_offset = data_dict.get("tz_offset", "")
 
         self.profile = UserProfile(data_dict.get("profile"))
+
+class Reactions(object):
+    def __init__(self, data_dict=None):
+        data_dict = data_dict or {}
+
+
+class Messages(object):
+    def __init__(self, data_dict=None):
+        data_dict = data_dict or {}
+
+        self.ts = data_dict.get('ts', '')
+        self.user_id = data_dict.get('user', '')
+        self.type = data_dict.get('type', '')
+        self.text = data_dict.get('text', '')
+        self.reactions = Reactions(data_dict.get('reactions', ''))
+

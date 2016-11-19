@@ -7,7 +7,7 @@ import logging
 import slackclient
 
 from slack_backup import db
-from slack_backup import objects
+from slack_backup import objects as o
 
 
 class Client(object):
@@ -24,7 +24,7 @@ class Client(object):
         else:
             selected_channels = channels
 
-        self._get_user_list()
+        self._update_users()
 
         for channel in selected_channels:
             # history = []
@@ -35,6 +35,8 @@ class Client(object):
                 # TODO: merge messages witihn a channel
                 if not messages:
                     break
+
+        self.session.close()
 
     def _get_channel_history(self, channel, latest='now'):
         result = self.slack.api_call("channels.history", channel=channel._id,
@@ -51,13 +53,35 @@ class Client(object):
             logging.error(result['error'])
             return None
 
-        return [objects.Channel(chan) for chan in result['channels']]
+        return [o.Channel(chan) for chan in result['channels']]
 
-    def _get_user_list(self):
+    def _update_users(self):
+        """Fetch and update user list with current state in db"""
         result = self.slack.api_call("users.list", presence=0)
+        all_users = self.session.query(o.User).all()
 
         if not result.get("ok"):
             logging.error(result['error'])
             return None
 
-        return [objects.User(user) for user in result['members']]
+        for user_data in result['members']:
+            slackid = user_data['id']
+            del user_data['id']
+            idmap = self.session.query(o.IdMap).\
+                    filter(o.IdMap.classname == 'User').\
+                    filter(o.IdMap.slackid == slackid).one_or_none()
+            if idmap:
+                user = self.session.query(o.User).get(idmap.dbid)
+                user.update(user_data)
+            else:
+                user = o.User(user_data)
+                self.session.add(user)
+                self.session.flush()
+
+                idmap = o.IdMap()
+                idmap.slackid = slackid
+                idmap.classname = 'User'
+                idmap.dbid = user.id
+                self.session.add(idmap)
+
+        self.session.commit()

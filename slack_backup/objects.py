@@ -4,7 +4,7 @@ Convinient object mapping from slack API reponses
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy import UniqueConstraint
-from sqlalchemy.orm import relation
+from sqlalchemy.orm import relationship
 
 from slack_backup.db import Base
 
@@ -85,6 +85,7 @@ class UserProfile(Base):
     __tablename__ = "profiles"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    user = relationship("User", back_populates="profile")
 
     avatar_hash = Column(Text)
     first_name = Column(Text)
@@ -99,7 +100,9 @@ class UserProfile(Base):
     real_name_normalized = Column(Text)
 
     def __init__(self, data_dict=None):
+        self.update(data_dict)
 
+    def update(self, data_dict):
         data_dict = data_dict or {}
 
         self.avatar_hash = data_dict.get('avatar_hash', '')
@@ -122,17 +125,22 @@ class User(Base):
     name = Column(Text)
     real_name = Column(Text)
 
-    profile = Column(Integer, ForeignKey('profiles.id'), index=True)
+    profile = relationship("UserProfile", uselist=False, back_populates="user")
 
-    def __init__(self, user_id, data_dict=None):
+    def __init__(self, data_dict=None):
+        self.update(data_dict)
+
+    def update(self, data_dict=None):
         data_dict = data_dict or {}
 
-        self.id = data_dict.get('id', '')
         self.deleted = data_dict.get('deleted', False)
         self.name = data_dict.get("name", '')
         self.real_name = data_dict.get('real_name', '')
 
-        self.profile = UserProfile(data_dict.get('profile'))
+        if not self.profile:
+            self.profile = UserProfile(data_dict.get('profile'))
+        else:
+            self.profile.update(data_dict.get('profile'))
 
     def __repr__(self):
         return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())

@@ -15,10 +15,11 @@ def main():
     parser.add_argument("token", help="Slack token - a string, which can be"
                         " generated/obtained via "
                         "https://api.slack.com/docs/oauth-test-tokens page")
-    # parser.add_argument("channel", help="Slack channel name")
+    parser.add_argument('-d', '--database', default='',
+                        help='Path to the database file')
     args = parser.parse_args()
 
-    slack = client.Client(args.token)
+    slack = client.Client(args.token, args.database)
 
     pprint.pprint(slack.get_hisotry(selected_channels=['elysium']))
 

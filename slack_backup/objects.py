@@ -10,7 +10,7 @@ from slack_backup.db import Base
 
 
 class IdMap(Base):
-    __tablename__ = "idmap"
+    __tablename__ = 'idmap'
     slackid = Column(Text, nullable=False, primary_key=True)
     dbid = Column(Integer, nullable=False, primary_key=True,
                   autoincrement=False)
@@ -20,8 +20,8 @@ class IdMap(Base):
 
 
 class Purpose(Base):
-    __tablename__ = "purposes"
-    creator = Column(Integer, ForeignKey("users.id"), index=True)
+    __tablename__ = 'purposes'
+    creator = Column(Integer, ForeignKey('users.id'), index=True)
     last_set = Column(DateTime, primary_key=True)
     value = Column(Text, primary_key=True)
 
@@ -32,15 +32,15 @@ class Purpose(Base):
         self.value = data_dict.get('value')
 
     def __repr__(self):
-        return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
+        return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u", %s" % self.value
+        return u', %s' % self.value
 
 
 class Topic(Base):
-    __tablename__ = "topics"
-    creator = Column(Integer, ForeignKey("users.id"), index=True)
+    __tablename__ = 'topics'
+    creator = Column(Integer, ForeignKey('users.id'), index=True)
     last_set = Column(DateTime, primary_key=True)
     value = Column(Text, primary_key=True)
 
@@ -51,13 +51,14 @@ class Topic(Base):
         self.value = data_dict.get('value')
 
     def __repr__(self):
-        return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
+        return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u", %s" % self.value
+        return u', %s' % self.value
 
 
 class Channel(object):
+    __tablename__ = 'channels'
     def __init__(self, data_dict=None):
         data_dict = data_dict or {}
 
@@ -74,74 +75,70 @@ class Channel(object):
         self.topic = Topic(data_dict.get('topic'))
 
     def __repr__(self):
-        return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
+        return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u"%s, %s %s" % (self.__class__.__name__, self._id, self.name)
+        return u'%s, %s %s' % (self.__class__.__name__, self._id, self.name)
 
 
-class UserProfile(object):
+class UserProfile(Base):
+    __tablename__ = "profiles"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+
+    avatar_hash = Column(Text)
+    first_name = Column(Text)
+    image_192 = Column(Text)
+    image_24 = Column(Text)
+    image_32 = Column(Text)
+    image_48 = Column(Text)
+    image_72 = Column(Text)
+    image_original = Column(Text)
+    last_name = Column(Text)
+    real_name = Column(Text)
+    real_name_normalized = Column(Text)
+
     def __init__(self, data_dict=None):
 
         data_dict = data_dict or {}
 
-        self.avatar_hash = data_dict.get("avatar_hash", "")
-        self.email = data_dict.get("email", "")
-        self.first_name = data_dict.get("first_name", "")
-        self.image_1024 = data_dict.get("image_1024", "")
-        self.image_192 = data_dict.get("image_192", "")
-        self.image_24 = data_dict.get("image_24", "")
-        self.image_32 = data_dict.get("image_32", "")
-        self.image_48 = data_dict.get("image_48", "")
-        self.image_512 = data_dict.get("image_512", "")
-        self.image_72 = data_dict.get("image_72", "")
-        self.image_original = data_dict.get("image_original", "")
-        self.last_name = data_dict.get("last_name", "")
-        self.phone = data_dict.get("phone", "")
-        self.real_name = data_dict.get("real_name", "")
-        self.real_name_normalized = data_dict.get("real_name_normalized", "")
-        self.skype = data_dict.get("skype", "")
+        self.avatar_hash = data_dict.get('avatar_hash', '')
+        self.first_name = data_dict.get('first_name', '')
+        self.image_192 = data_dict.get('image_192', '')
+        self.image_24 = data_dict.get('image_24', '')
+        self.image_32 = data_dict.get('image_32', '')
+        self.image_48 = data_dict.get('image_48', '')
+        self.image_72 = data_dict.get('image_72', '')
+        self.image_original = data_dict.get('image_original', '')
+        self.last_name = data_dict.get('last_name', '')
+        self.real_name = data_dict.get('real_name', '')
+        self.real_name_normalized = data_dict.get('real_name_normalized', '')
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     deleted = Column(Boolean, default=False)
     name = Column(Text)
     real_name = Column(Text)
 
-    profile = Column(Integer)
+    profile = Column(Integer, ForeignKey('profiles.id'), index=True)
 
     def __init__(self, user_id, data_dict=None):
         data_dict = data_dict or {}
 
-        self.id = data_dict.get("id", "")
-        self.color = data_dict.get("color", "")
-        self.deleted = data_dict.get("deleted", False)
-        self.has_2fa = data_dict.get("has_2fa", False)
-        self.has_files = data_dict.get("has_files", False)
-        self.is_admin = data_dict.get("is_admin", False)
-        self.is_bot = data_dict.get("tz", "")
-        self.is_owner = data_dict.get("is_owner", False)
-        self.is_primary_owner = data_dict.get("is_primary_owner", False)
-        self.is_restricted = data_dict.get("is_restricted", False)
-        self.is_ultra_restricted = data_dict.get("is_ultra_restricted", False)
-        self.name = data_dict.get("name", "")
-        self.real_name = data_dict.get("real_name", "")
-        self.status = data_dict.get("status", "")
-        self.team_id = data_dict.get("team_id", "")
-        self.two_factor_type = data_dict.get("two_factor_type", "")
-        self.tz = data_dict.get("tz", "")
-        self.tz_label = data_dict.get("tz_label", "")
-        self.tz_offset = data_dict.get("tz_offset", "")
+        self.id = data_dict.get('id', '')
+        self.deleted = data_dict.get('deleted', False)
+        self.name = data_dict.get("name", '')
+        self.real_name = data_dict.get('real_name', '')
 
-        self.profile = UserProfile(data_dict.get("profile"))
+        self.profile = UserProfile(data_dict.get('profile'))
 
     def __repr__(self):
-        return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
+        return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u"%s, %s %s" % (self.__class__.__name__, self._id, self.name)
+        return u'%s, %s %s' % (self.__class__.__name__, self.id, self.name)
 
 
 class Reactions(object):

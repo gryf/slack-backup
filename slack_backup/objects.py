@@ -1,7 +1,7 @@
 """
 Convinient object mapping from slack API reponses
 """
-from sqlalchemy import Column, Integer, Text
+from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relation
@@ -11,18 +11,19 @@ from slack_backup.db import Base
 
 class IdMap(Base):
     __tablename__ = "idmap"
-    slackid = Column(Text, nullable=False)
-    dbid = Column(Integer, nullable=False)
-    classname = Column(Text, nullable=False)
+    slackid = Column(Text, nullable=False, primary_key=True)
+    dbid = Column(Integer, nullable=False, primary_key=True,
+                  autoincrement=False)
+    classname = Column(Text, nullable=False, primary_key=True)
     __table_args__ = (UniqueConstraint('slackid', 'dbid', 'classname',
-                                       name='slackid_dbid_classname_uniq'))
+                                       name='slackid_dbid_classname_uniq'),)
 
 
 class Purpose(Base):
-    __tablename__ = "purpose"
-    creator = relation("User", backref="purposes")
-    last_set = Column(DateTime)
-    value = Column(Text)
+    __tablename__ = "purposes"
+    creator = Column(Integer, ForeignKey("users.id"), index=True)
+    last_set = Column(DateTime, primary_key=True)
+    value = Column(Text, primary_key=True)
 
     def __init__(self, data_dict=None):
         data_dict = data_dict or {}
@@ -38,10 +39,10 @@ class Purpose(Base):
 
 
 class Topic(Base):
-    __tablename__ = "topic"
-    creator = relation("User", backref="topics")
-    last_set = Column(DateTime)
-    value = Column(Text)
+    __tablename__ = "topics"
+    creator = Column(Integer, ForeignKey("users.id"), index=True)
+    last_set = Column(DateTime, primary_key=True)
+    value = Column(Text, primary_key=True)
 
     def __init__(self, data_dict=None):
         data_dict = data_dict or {}
@@ -102,11 +103,19 @@ class UserProfile(object):
         self.skype = data_dict.get("skype", "")
 
 
-class User(object):
-    def __init__(self, data_dict=None):
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    deleted = Column(Boolean, default=False)
+    name = Column(Text)
+    real_name = Column(Text)
+
+    profile = Column(Integer)
+
+    def __init__(self, user_id, data_dict=None):
         data_dict = data_dict or {}
 
-        self._id = data_dict.get("id", "")
+        self.id = data_dict.get("id", "")
         self.color = data_dict.get("color", "")
         self.deleted = data_dict.get("deleted", False)
         self.has_2fa = data_dict.get("has_2fa", False)

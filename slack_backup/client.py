@@ -2,17 +2,19 @@
 """
 Create backup for certain date for specified channel in slack
 """
-import argparse
 import logging
 
 import slackclient
 
+from slack_backup import db
 from slack_backup import objects
 
 
 class Client(object):
-    def __init__(self, token):
+    def __init__(self, token, dbfilename=None):
         self.slack = slackclient.SlackClient(token)
+        self.engine = db.connect(dbfilename)
+        self.session = db.Session()
 
     def get_hisotry(self, selected_channels=None, from_date=0):
         channels = self._get_channel_list()
@@ -22,10 +24,10 @@ class Client(object):
         else:
             selected_channels = channels
 
-        users = self._get_user_list()
+        self._get_user_list()
 
         for channel in selected_channels:
-            history = []
+            # history = []
             latest = 'now'
 
             while True:

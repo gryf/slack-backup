@@ -1,9 +1,29 @@
-#!/usr/bin/env python3
 """
 Convinient object mapping from slack API reponses
 """
+from sqlalchemy import Column, Integer, Text
+from sqlalchemy import DateTime
+from sqlalchemy import UniqueConstraint
+from sqlalchemy.orm import relation
 
-class Base(object):
+from slack_backup.db import Base
+
+
+class IdMap(Base):
+    __tablename__ = "idmap"
+    slackid = Column(Text, nullable=False)
+    dbid = Column(Integer, nullable=False)
+    classname = Column(Text, nullable=False)
+    __table_args__ = (UniqueConstraint('slackid', 'dbid', 'classname',
+                                       name='slackid_dbid_classname_uniq'))
+
+
+class Purpose(Base):
+    __tablename__ = "purpose"
+    creator = relation("User", backref="purposes")
+    last_set = Column(DateTime)
+    value = Column(Text)
+
     def __init__(self, data_dict=None):
         data_dict = data_dict or {}
         self.creator = data_dict.get('creator', '')
@@ -17,30 +37,27 @@ class Base(object):
         return u", %s" % self.value
 
 
-class Purpose(Base):
-    pass
-
-
 class Topic(Base):
-    pass
+    __tablename__ = "topic"
+    creator = relation("User", backref="topics")
+    last_set = Column(DateTime)
+    value = Column(Text)
 
-
-class BaseObject(object):
-    def __init__(self):
-        self._id = None
-        self.name = None
+    def __init__(self, data_dict=None):
+        data_dict = data_dict or {}
+        self.creator = data_dict.get('creator', '')
+        self.last_set = data_dict.get('last_set', 0)
+        self.value = data_dict.get('value')
 
     def __repr__(self):
         return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u"%s, %s %s" % (self.__class__.__name__, self._id, self.name)
+        return u", %s" % self.value
 
 
-class Channel(BaseObject):
+class Channel(object):
     def __init__(self, data_dict=None):
-        super().__init__()
-
         data_dict = data_dict or {}
 
         self._id = data_dict['id']
@@ -55,10 +72,15 @@ class Channel(BaseObject):
         self.purpose = Purpose(data_dict.get('purpose'))
         self.topic = Topic(data_dict.get('topic'))
 
+    def __repr__(self):
+        return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
+
+    def __unicode__(self):
+        return u"%s, %s %s" % (self.__class__.__name__, self._id, self.name)
+
 
 class UserProfile(object):
     def __init__(self, data_dict=None):
-        super().__init__()
 
         data_dict = data_dict or {}
 
@@ -80,7 +102,7 @@ class UserProfile(object):
         self.skype = data_dict.get("skype", "")
 
 
-class User(BaseObject):
+class User(object):
     def __init__(self, data_dict=None):
         data_dict = data_dict or {}
 
@@ -106,6 +128,13 @@ class User(BaseObject):
 
         self.profile = UserProfile(data_dict.get("profile"))
 
+    def __repr__(self):
+        return u"<%s %s>" % (str(hex(id(self))), self.__unicode__())
+
+    def __unicode__(self):
+        return u"%s, %s %s" % (self.__class__.__name__, self._id, self.name)
+
+
 class Reactions(object):
     def __init__(self, data_dict=None):
         data_dict = data_dict or {}
@@ -120,4 +149,3 @@ class Messages(object):
         self.type = data_dict.get('type', '')
         self.text = data_dict.get('text', '')
         self.reactions = Reactions(data_dict.get('reactions', ''))
-

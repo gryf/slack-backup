@@ -27,27 +27,34 @@ class Client(object):
         else:
             selected_channels = channels
 
-        self._update_users()
-
         for channel in selected_channels:
-            # history = []
-            latest = 'now'
+            history = []
+            latest = 0
 
             while True:
                 messages, latest = self._get_channel_history(channel, latest)
                 # TODO: merge messages witihn a channel
-                if not messages:
+                if latest is None:
                     break
+                for msg in messages:
+                    history.append(msg)
 
         self.session.close()
+        return history
 
     def _get_channel_history(self, channel, latest='now'):
-        result = self.slack.api_call("channels.history", channel=channel._id,
-                                     count=1000, latest=latest)
+        result = self.slack.api_call("channels.history",
+                                     channel=channel.slackid, count=1000,
+                                     latest=latest)
 
         if not result.get("ok"):
             logging.error(result['error'])
             return None, None
+
+        if result['messages']:
+            return result['messages'], result['messages'][-1]['ts']
+        else:
+            return result['messages'], None
 
     def _get_channel_list(self):
         result = self.slack.api_call("channels.list")

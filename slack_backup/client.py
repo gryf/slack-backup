@@ -2,11 +2,12 @@
 Create backup for certain date for specified channel in slack
 """
 import logging
+from datetime import datetime
 
 import slackclient
 
 from slack_backup import db
-from slack_backup import objects as o
+from slack_backup.objects import User, Channel, Purpose, Topic
 
 
 class Client(object):
@@ -14,6 +15,7 @@ class Client(object):
         self.slack = slackclient.SlackClient(token)
         self.engine = db.connect(dbfilename)
         self.session = db.Session()
+        self.q = self.session.query
 
     def get_hisotry(self, selected_channels=None, from_date=0):
 
@@ -43,6 +45,7 @@ class Client(object):
         return history
 
     def _get_channel_history(self, channel, latest='now'):
+        return [], None
         result = self.slack.api_call("channels.history",
                                      channel=channel.slackid, count=1000,
                                      latest=latest)
@@ -63,7 +66,7 @@ class Client(object):
             logging.error(result['error'])
             return None
 
-        return [o.Channel(chan) for chan in result['channels']]
+        return [Channel(chan) for chan in result['channels']]
 
     def _update_users(self):
         """Fetch and update user list with current state in db"""
@@ -74,41 +77,55 @@ class Client(object):
             return
 
         for user_data in result['members']:
-            user = self.session.query(o.User).\
-                filter(o.User.slackid == user_data['id']).one_or_none()
+            user = self.q(User).\
+                filter(User.slackid == user_data['id']).one_or_none()
 
             if user:
                 user.update(user_data)
             else:
-                user = o.User(user_data)
+                user = User(user_data)
                 self.session.add(user)
                 self.session.flush()
 
         self.session.commit()
 
-    def get_create_obj(self, data, classobj, channel):
+    def _get_create_obj(self, data, classobj, channel):
         """
-        Return object if exist in appropriate table (class), compared to the
-        data provided, create it otherwise.
+        Return object if exist in appropriate table (Topic or Purpose),
+        compared to the data provided, create it otherwise.
         """
-        user = self.session.query(o.User).\
-            filter(o.User.slackid == data['creator']).one_or_none()
+        user = self.q(User).filter(User.slackid ==
+                                   data['creator']).one_or_none()
         if not user:
             return
 
-        obj = self.session.query(classobj).\
-            filter(classobj.last_set == data['last_set']).\
-            filter(classobj.value == data['last_set']).\
+        obj = self.q(classobj).\
+            filter(classobj.last_set ==
+                   datetime.fromtimestamp(data['last_set'])).\
+            filter(classobj.value == data['value']).\
             filter(classobj.creator_id == user.id).one_or_none()
 
         if not obj:
+            # break channel relation
+            for obj in self.q(classobj).filter(classobj.channel ==
+                                               channel).all():
+                obj.channel = None
+
+            # create new object
             obj = classobj(data)
             obj.creator = user
-            obj.channel = channel
-            self.session.add(obj)
             self.session.flush()
 
         return obj
+
+    def _update_channel(self, channel, data):
+        channel.update(data)
+        channel.user = self.q(User).filter(User.slackid ==
+                                           data['created']).one_or_none()
+        channel.purpose = self._get_create_obj(data['purpose'], Purpose,
+                                               channel)
+        channel.topic = self._get_create_obj(data['topic'], Topic, channel)
+        self.session.flush()
 
     def _update_channels(self):
         """Fetch and update user list with current state in db"""
@@ -119,25 +136,13 @@ class Client(object):
             return None
 
         for channel_data in result['channels']:
-            channel = self.session.query(o.Channel).\
-                filter(o.Channel.slackid == channel_data['id']).one_or_none()
+            channel = self.q(Channel).filter(Channel.slackid ==
+                                             channel_data['id']).one_or_none()
 
-            if channel:
-                channel.update(channel_data)
-                channel.user = self.session.query(o.User).\
-                    filter(o.User.slackid ==
-                           channel_data['created']).one_or_none()
-                # channel.purpose = self.get_create_obj(channel_data['purpose'],
-                                                      # o.Purpose, channel)
-                # channel.topic = self.get_create_obj(channel_data['topic'],
-                                                    # o.Topic, channel)
-            else:
-                channel = o.Channel(channel_data)
-                # channel.purpose = self.get_create_obj(channel_data['purpose'],
-                                                      # o.Purpose, channel)
-                # channel.topic = self.get_create_obj(channel_data['topic'],
-                                                    # o.Topic, channel)
+            if not channel:
+                channel = Channel()
                 self.session.add(channel)
-                self.session.flush()
+
+            self._update_channel(channel, channel_data)
 
         self.session.commit()

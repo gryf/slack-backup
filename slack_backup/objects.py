@@ -3,7 +3,6 @@ Convinient object mapping from slack API reponses
 """
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy import DateTime
-from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from slack_backup.db import Base
@@ -15,21 +14,28 @@ class IdMap(Base):
     dbid = Column(Integer, nullable=False, primary_key=True,
                   autoincrement=False)
     classname = Column(Text, nullable=False, primary_key=True)
-    __table_args__ = (UniqueConstraint('slackid', 'dbid', 'classname',
-                                       name='slackid_dbid_classname_uniq'),)
 
 
 class Purpose(Base):
     __tablename__ = 'purposes'
-    creator = Column(Integer, ForeignKey('users.id'), index=True)
+    id = Column(Integer, primary_key=True)
     last_set = Column(DateTime, primary_key=True)
     value = Column(Text, primary_key=True)
 
-    def __init__(self, data_dict=None):
+    creator_id = Column(Integer, ForeignKey('users.id'), index=True)
+    creator = relationship("User", back_populates="purposes")
+
+    channel_id = Column(Integer, ForeignKey('channels.id'), index=True)
+    channel = relationship("Channel", back_populates="purpose")
+
+    def __init__(self, creator, data_dict=None):
+        self.update(creator, data_dict)
+
+    def update(self, creator, data_dict):
         data_dict = data_dict or {}
-        self.creator = data_dict.get('creator', '')
         self.last_set = data_dict.get('last_set', 0)
         self.value = data_dict.get('value')
+        self.creator = creator
 
     def __repr__(self):
         return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
@@ -40,15 +46,24 @@ class Purpose(Base):
 
 class Topic(Base):
     __tablename__ = 'topics'
-    creator = Column(Integer, ForeignKey('users.id'), index=True)
+    id = Column(Integer, primary_key=True)
     last_set = Column(DateTime, primary_key=True)
     value = Column(Text, primary_key=True)
 
-    def __init__(self, data_dict=None):
+    channel_id = Column(Integer, ForeignKey('channels.id'), index=True)
+    channel = relationship("Channel", back_populates="topic")
+
+    creator_id = Column(Integer, ForeignKey('users.id'), index=True)
+    creator = relationship("User", back_populates="topics")
+
+    def __init__(self, creator, data_dict=None):
+        self.update(creator, data_dict)
+
+    def update(self, creator, data_dict):
         data_dict = data_dict or {}
-        self.creator = data_dict.get('creator', '')
         self.last_set = data_dict.get('last_set', 0)
         self.value = data_dict.get('value')
+        self.creator = creator
 
     def __repr__(self):
         return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
@@ -57,28 +72,35 @@ class Topic(Base):
         return u', %s' % self.value
 
 
-class Channel(object):
+class Channel(Base):
     __tablename__ = 'channels'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Text)
+    created = Column(DateTime)
+    is_archived = Column(Boolean, default=False)
+
+    creator_id = Column(Integer, ForeignKey("users.id"), index=True)
+    creator = relationship("User", back_populates="channels")
+
+    purpose = relationship("Purpose", uselist=False, back_populates="channel")
+    topic = relationship("Topic", uselist=False, back_populates="channel")
+
     def __init__(self, data_dict=None):
+        self.update(data_dict)
+
+    def update(self, data_dict):
         data_dict = data_dict or {}
 
-        self._id = data_dict['id']
         self.name = data_dict['name']
         self.created = data_dict.get('created', '')
-        self.creator = data_dict.get('created', '')
-        self.is_archived = data_dict.get('created', '')
-        self.is_channel = True,
-        self.is_general = data_dict['is_general']
-        self.members = data_dict.get('members', [])
-
-        self.purpose = Purpose(data_dict.get('purpose'))
-        self.topic = Topic(data_dict.get('topic'))
+        self.is_archived = data_dict.get('is_archived', False)
 
     def __repr__(self):
         return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u'%s, %s %s' % (self.__class__.__name__, self._id, self.name)
+        return u'%s, %s %s' % (self.__class__.__name__, self.id, self.name)
 
 
 class UserProfile(Base):
@@ -126,6 +148,9 @@ class User(Base):
     real_name = Column(Text)
 
     profile = relationship("UserProfile", uselist=False, back_populates="user")
+    channels = relationship("Channel", back_populates="creator")
+    purposes = relationship("Purpose", back_populates="creator")
+    topics = relationship("Topic", back_populates="creator")
 
     def __init__(self, data_dict=None):
         self.update(data_dict)

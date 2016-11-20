@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Create backup for certain date for specified channel in slack
 """
@@ -17,6 +16,10 @@ class Client(object):
         self.session = db.Session()
 
     def get_hisotry(self, selected_channels=None, from_date=0):
+
+        self._update_users()
+        self._update_channels()
+
         channels = self._get_channel_list()
         if selected_channels:
             selected_channels = [c for c in channels

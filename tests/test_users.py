@@ -151,3 +151,4 @@ class TestClient(unittest.TestCase):
         users = cl.session.query(objects.User).all()
         self.assertEqual(len(users), 4)
         self.assertEqual(users[0].id, 1)
+        self.assertEqual(users[0].slackid, 'UAAAAAAAA')

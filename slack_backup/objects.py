@@ -1,23 +1,19 @@
 """
 Convinient object mapping from slack API reponses
 """
-from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, Sequence
 from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
 from slack_backup.db import Base
 
 
-class IdMap(Base):
-    __tablename__ = 'idmap'
-    slackid = Column(Text, nullable=False, primary_key=True)
-    dbid = Column(Integer, nullable=False, primary_key=True,
-                  autoincrement=False)
-    classname = Column(Text, nullable=False, primary_key=True)
-
-
 class Purpose(Base):
     __tablename__ = 'purposes'
+    __table_args__ = {'sqlite_autoincrement': True}
+
     id = Column(Integer, primary_key=True)
     last_set = Column(DateTime, primary_key=True)
     value = Column(Text, primary_key=True)
@@ -28,25 +24,26 @@ class Purpose(Base):
     channel_id = Column(Integer, ForeignKey('channels.id'), index=True)
     channel = relationship("Channel", back_populates="purpose")
 
-    def __init__(self, creator, data_dict=None):
-        self.update(creator, data_dict)
+    def __init__(self, data_dict=None):
+        self.update(data_dict)
 
-    def update(self, creator, data_dict):
+    def update(self, data_dict):
         data_dict = data_dict or {}
-        self.last_set = data_dict.get('last_set', 0)
+        self.last_set = datetime.fromtimestamp(data_dict.get('last_set', 0))
         self.value = data_dict.get('value')
-        self.creator = creator
 
     def __repr__(self):
         return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u', %s' % self.value
+        return u', %s %s' % (self.id, self.value)
 
 
 class Topic(Base):
     __tablename__ = 'topics'
-    id = Column(Integer, primary_key=True)
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = Column(Integer, Sequence("file_id_seq"), primary_key=True)
     last_set = Column(DateTime, primary_key=True)
     value = Column(Text, primary_key=True)
 
@@ -56,31 +53,33 @@ class Topic(Base):
     creator_id = Column(Integer, ForeignKey('users.id'), index=True)
     creator = relationship("User", back_populates="topics")
 
-    def __init__(self, creator, data_dict=None):
-        self.update(creator, data_dict)
+    def __init__(self, data_dict=None):
+        self.update(data_dict)
 
-    def update(self, creator, data_dict):
+    def update(self, data_dict):
         data_dict = data_dict or {}
-        self.last_set = data_dict.get('last_set', 0)
+        self.last_set = datetime.fromtimestamp(data_dict.get('last_set', 0))
         self.value = data_dict.get('value')
-        self.creator = creator
 
     def __repr__(self):
         return u'<%s %s>' % (str(hex(id(self))), self.__unicode__())
 
     def __unicode__(self):
-        return u', %s' % self.value
+        return u', %s %s' % (self.id, self.value)
 
 
 class Channel(Base):
     __tablename__ = 'channels'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
+    slackid = Column(Text)
     name = Column(Text)
     created = Column(DateTime)
     is_archived = Column(Boolean, default=False)
 
-    creator_id = Column(Integer, ForeignKey("users.id"), index=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=True,
+                        index=True)
     creator = relationship("User", back_populates="channels")
 
     purpose = relationship("Purpose", uselist=False, back_populates="channel")
@@ -92,8 +91,9 @@ class Channel(Base):
     def update(self, data_dict):
         data_dict = data_dict or {}
 
-        self.name = data_dict['name']
-        self.created = data_dict.get('created', '')
+        self.slackid = data_dict.get('id', '')
+        self.name = data_dict.get('name', '')
+        self.created = datetime.fromtimestamp(data_dict.get('created', 0))
         self.is_archived = data_dict.get('is_archived', False)
 
     def __repr__(self):
@@ -105,6 +105,8 @@ class Channel(Base):
 
 class UserProfile(Base):
     __tablename__ = "profiles"
+    __table_args__ = {'sqlite_autoincrement': True}
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     user = relationship("User", back_populates="profile")
@@ -142,7 +144,10 @@ class UserProfile(Base):
 
 class User(Base):
     __tablename__ = 'users'
+    __table_args__ = {'sqlite_autoincrement': True}
+
     id = Column(Integer, primary_key=True)
+    slackid = Column(Text)
     deleted = Column(Boolean, default=False)
     name = Column(Text)
     real_name = Column(Text)
@@ -158,6 +163,7 @@ class User(Base):
     def update(self, data_dict=None):
         data_dict = data_dict or {}
 
+        self.slackid = data_dict.get('id', '')
         self.deleted = data_dict.get('deleted', False)
         self.name = data_dict.get("name", '')
         self.real_name = data_dict.get('real_name', '')

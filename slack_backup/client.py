@@ -68,30 +68,76 @@ class Client(object):
     def _update_users(self):
         """Fetch and update user list with current state in db"""
         result = self.slack.api_call("users.list", presence=0)
-        all_users = self.session.query(o.User).all()
 
         if not result.get("ok"):
             logging.error(result['error'])
-            return None
+            return
 
         for user_data in result['members']:
-            slackid = user_data['id']
-            del user_data['id']
-            idmap = self.session.query(o.IdMap).\
-                    filter(o.IdMap.classname == 'User').\
-                    filter(o.IdMap.slackid == slackid).one_or_none()
-            if idmap:
-                user = self.session.query(o.User).get(idmap.dbid)
+            user = self.session.query(o.User).\
+                filter(o.User.slackid == user_data['id']).one_or_none()
+
+            if user:
                 user.update(user_data)
             else:
                 user = o.User(user_data)
                 self.session.add(user)
                 self.session.flush()
 
-                idmap = o.IdMap()
-                idmap.slackid = slackid
-                idmap.classname = 'User'
-                idmap.dbid = user.id
-                self.session.add(idmap)
+        self.session.commit()
+
+    def get_create_obj(self, data, classobj, channel):
+        """
+        Return object if exist in appropriate table (class), compared to the
+        data provided, create it otherwise.
+        """
+        user = self.session.query(o.User).\
+            filter(o.User.slackid == data['creator']).one_or_none()
+        if not user:
+            return
+
+        obj = self.session.query(classobj).\
+            filter(classobj.last_set == data['last_set']).\
+            filter(classobj.value == data['last_set']).\
+            filter(classobj.creator_id == user.id).one_or_none()
+
+        if not obj:
+            obj = classobj(data)
+            obj.creator = user
+            obj.channel = channel
+            self.session.add(obj)
+            self.session.flush()
+
+        return obj
+
+    def _update_channels(self):
+        """Fetch and update user list with current state in db"""
+        result = self.slack.api_call("channels.list", presence=0)
+
+        if not result.get("ok"):
+            logging.error(result['error'])
+            return None
+
+        for channel_data in result['channels']:
+            channel = self.session.query(o.Channel).\
+                filter(o.Channel.slackid == channel_data['id']).one_or_none()
+
+            if channel:
+                channel.update(channel_data)
+                channel.user = self.session.query(o.User).\
+                    filter(o.User.slackid ==
+                           channel_data['created']).one_or_none()
+                # channel.purpose = self.get_create_obj(channel_data['purpose'],
+                                                      # o.Purpose, channel)
+                # channel.topic = self.get_create_obj(channel_data['topic'],
+                                                    # o.Topic, channel)
+            else:
+                channel = o.Channel(channel_data)
+                # channel.purpose = self.get_create_obj(channel_data['purpose'],
+                                                      # o.Purpose, channel)
+                # channel.topic = self.get_create_obj(channel_data['topic'],
+                                                    # o.Topic, channel)
+                self.session.add(channel)
+                self.session.flush()
 
         self.session.commit()

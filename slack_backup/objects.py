@@ -3,7 +3,7 @@ Convinient object mapping from slack API reponses
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, Sequence
+from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
@@ -12,11 +12,10 @@ from slack_backup.db import Base
 
 class Purpose(Base):
     __tablename__ = 'purposes'
-    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
-    last_set = Column(DateTime, primary_key=True)
-    value = Column(Text, primary_key=True)
+    last_set = Column(DateTime)
+    value = Column(Text)
 
     creator_id = Column(Integer, ForeignKey('users.id'), index=True)
     creator = relationship("User", back_populates="purposes")
@@ -41,11 +40,10 @@ class Purpose(Base):
 
 class Topic(Base):
     __tablename__ = 'topics'
-    __table_args__ = {'sqlite_autoincrement': True}
 
-    id = Column(Integer, Sequence("file_id_seq"), primary_key=True)
-    last_set = Column(DateTime, primary_key=True)
-    value = Column(Text, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    last_set = Column(DateTime)
+    value = Column(Text)
 
     channel_id = Column(Integer, ForeignKey('channels.id'), index=True)
     channel = relationship("Channel", back_populates="topic")
@@ -70,7 +68,6 @@ class Topic(Base):
 
 class Channel(Base):
     __tablename__ = 'channels'
-    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
     slackid = Column(Text)
@@ -105,7 +102,6 @@ class Channel(Base):
 
 class UserProfile(Base):
     __tablename__ = "profiles"
-    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
@@ -144,7 +140,6 @@ class UserProfile(Base):
 
 class User(Base):
     __tablename__ = 'users'
-    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
     slackid = Column(Text)

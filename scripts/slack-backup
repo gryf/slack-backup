@@ -4,24 +4,34 @@
 Create backup for certain date for specified channel in slack
 """
 import argparse
-import pprint
+import json
 
 from slack_backup import client
 
 
+def channel_list(string):
+    return string.split(',')
+
 def main():
     """Main function"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("token", help="Slack token - a string, which can be"
-                        " generated/obtained via "
-                        "https://api.slack.com/docs/oauth-test-tokens page")
+    parser.add_argument('-t', '--token', required=True, help='Slack token - '
+                        'a string, which can be generated/obtained via '
+                        'https://api.slack.com/docs/oauth-test-tokens page')
     parser.add_argument('-d', '--database', default='',
                         help='Path to the database file')
+    parser.add_argument('-f', '--format', default='text',
+                        choices=('text', 'json', 'html', 'none'),
+                        help='Output format. Default is none; only database '
+                        'is updated by latest messages for all/selected '
+                        'channels.')
+    parser.add_argument('-c', '--channels', default=[], nargs='+',
+                        help='List of channels to perform actions on. '
+                        'Default is all channels')
     args = parser.parse_args()
 
     slack = client.Client(args.token, args.database)
-
-    pprint.pprint(slack.get_hisotry(selected_channels=['elysium']))
+    slack.update_history(selected_channels=args.channels)
 
 
 if __name__ == "__main__":

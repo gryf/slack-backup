@@ -104,10 +104,9 @@ class UserProfile(Base):
     __tablename__ = "profiles"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), index=True)
-    user = relationship("User", back_populates="profile")
 
     avatar_hash = Column(Text)
+    email = Column(Text)
     first_name = Column(Text)
     image_192 = Column(Text)
     image_24 = Column(Text)
@@ -119,6 +118,9 @@ class UserProfile(Base):
     real_name = Column(Text)
     real_name_normalized = Column(Text)
 
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    user = relationship("User", back_populates="profile")
+
     def __init__(self, data_dict=None):
         self.update(data_dict)
 
@@ -126,6 +128,7 @@ class UserProfile(Base):
         data_dict = data_dict or {}
 
         self.avatar_hash = data_dict.get('avatar_hash', '')
+        self.email = data_dict.get("email", '')
         self.first_name = data_dict.get('first_name', '')
         self.image_192 = data_dict.get('image_192', '')
         self.image_24 = data_dict.get('image_24', '')
@@ -142,13 +145,13 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    slackid = Column(Text)
     deleted = Column(Boolean, default=False)
     name = Column(Text)
     real_name = Column(Text)
+    slackid = Column(Text)
 
-    profile = relationship("UserProfile", uselist=False, back_populates="user")
     channels = relationship("Channel", back_populates="creator")
+    profile = relationship("UserProfile", uselist=False, back_populates="user")
     purposes = relationship("Purpose", back_populates="creator")
     topics = relationship("Topic", back_populates="creator")
 
@@ -158,10 +161,10 @@ class User(Base):
     def update(self, data_dict=None):
         data_dict = data_dict or {}
 
-        self.slackid = data_dict.get('id', '')
         self.deleted = data_dict.get('deleted', False)
         self.name = data_dict.get("name", '')
         self.real_name = data_dict.get('real_name', '')
+        self.slackid = data_dict.get('id', '')
 
         if not self.profile:
             self.profile = UserProfile(data_dict.get('profile'))

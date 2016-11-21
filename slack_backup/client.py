@@ -7,7 +7,7 @@ from datetime import datetime
 import slackclient
 
 from slack_backup import db
-from slack_backup.objects import User, Channel, Purpose, Topic
+from slack_backup import objects as o
 
 
 class Client(object):
@@ -17,57 +17,26 @@ class Client(object):
         self.session = db.Session()
         self.q = self.session.query
 
-    def update_history(self, selected_channels=None, from_date=0):
+    def update_channels(self):
+        """Fetch and update channel list with current state in db"""
+        result = self._channels_list()
 
-        self._update_users()
-        self._update_channels()
+        if not result:
+            return
 
-        channels = self._get_channel_list()
-        if selected_channels:
-            selected_channels = [c for c in channels
-                                 if c.name in selected_channels]
-        else:
-            selected_channels = channels
+        for channel_data in result['channels']:
+            channel = self.q(o.Channel).\
+                filter(o.Channel.slackid == channel_data['id']).one_or_none()
 
-        for channel in selected_channels:
-            history = []
-            latest = 0
+            if not channel:
+                channel = o.Channel()
+                self.session.add(channel)
 
-            while True:
-                messages, latest = self._get_channel_history(channel, latest)
-                # TODO: merge messages witihn a channel
-                if latest is None:
-                    break
-                for msg in messages:
-                    history.append(msg)
+            self._update_channel(channel, channel_data)
 
-        self.session.close()
-        return history
+        self.session.commit()
 
-    def _get_channel_history(self, channel, latest='now'):
-        result = self.slack.api_call("channels.history",
-                                     channel=channel.slackid, count=1000,
-                                     latest=latest)
-
-        if not result.get("ok"):
-            logging.error(result['error'])
-            return None, None
-
-        if result['messages']:
-            return result['messages'], result['messages'][-1]['ts']
-        else:
-            return result['messages'], None
-
-    def _get_channel_list(self):
-        result = self.slack.api_call("channels.list")
-
-        if not result.get("ok"):
-            logging.error(result['error'])
-            return None
-
-        return [Channel(chan) for chan in result['channels']]
-
-    def _update_users(self):
+    def update_users(self):
         """Fetch and update user list with current state in db"""
         result = self.slack.api_call("users.list", presence=0)
 
@@ -76,33 +45,75 @@ class Client(object):
             return
 
         for user_data in result['members']:
-            user = self.q(User).\
-                filter(User.slackid == user_data['id']).one_or_none()
+            user = self.q(o.User).\
+                filter(o.User.slackid == user_data['id']).one_or_none()
 
             if user:
                 user.update(user_data)
             else:
-                user = User(user_data)
+                user = o.User(user_data)
                 self.session.add(user)
                 self.session.flush()
 
         self.session.commit()
+
+    def update_history(self, selected_channels=None):
+        """
+        Get the latest or all messages out of optionally selected channels
+        """
+
+        channels = self.q(o.Channel).all()
+        if selected_channels:
+            selected_channels = [c for c in channels
+                                 if c.name in selected_channels]
+        else:
+            selected_channels = channels
+
+        for channel in selected_channels:
+            latest = self.q(o.Message).\
+                filter(o.Message.channel == channel).\
+                order_by(o.Message.ts.desc()).first()
+            latest = latest and latest.ts or 0
+
+            while True:
+                messages, latest = self._channels_history(channel, latest)
+
+                for msg in messages:
+                    self._create_message(msg, channel)
+
+                if latest is None:
+                    break
+
+        self.session.commit()
+
+    def _create_message(self, data, channel):
+        message = o.Message(data)
+        message.user = self.q(o.User).\
+            filter(o.User.slackid == data['user']).one()
+        message.channel = channel
+
+        if 'reactions' in data:
+            for reaction_data in data['reactions']:
+                o.Message.reactions.append(o.Reaction(reaction_data))
+
+        self.session.add(o.Message)
 
     def _get_create_obj(self, data, classobj, channel):
         """
         Return object if exist in appropriate table (Topic or Purpose),
         compared to the data provided, create it otherwise.
         """
-        user = self.q(User).filter(User.slackid ==
-                                   data['creator']).one_or_none()
-        if not user:
+        if not data['value']:
             return
+
+        user = self.q(o.User).filter(o.User.slackid ==
+                                     data['creator']).one_or_none()
 
         obj = self.q(classobj).\
             filter(classobj.last_set ==
                    datetime.fromtimestamp(data['last_set'])).\
             filter(classobj.value == data['value']).\
-            filter(classobj.creator_id == user.id).one_or_none()
+            filter(classobj.creator == user).one_or_none()
 
         if not obj:
             # break channel relation
@@ -118,30 +129,63 @@ class Client(object):
         return obj
 
     def _update_channel(self, channel, data):
+        """Update a channel with provided data"""
         channel.update(data)
-        channel.user = self.q(User).filter(User.slackid ==
-                                           data['created']).one_or_none()
-        channel.purpose = self._get_create_obj(data['purpose'], Purpose,
+        channel.user = self.q(o.User).filter(o.User.slackid ==
+                                             data['creator']).one_or_none()
+        channel.purpose = self._get_create_obj(data['purpose'], o.Purpose,
                                                channel)
-        channel.topic = self._get_create_obj(data['topic'], Topic, channel)
+        channel.topic = self._get_create_obj(data['topic'], o.Topic, channel)
         self.session.flush()
 
-    def _update_channels(self):
-        """Fetch and update user list with current state in db"""
-        result = self.slack.api_call("channels.list", presence=0)
+    def _channels_list(self):
+        """
+        Get channel list using Slack API. Return list of channel data or None
+        in case of error.
+        """
+        result = self.slack.api_call("channels.list")
 
         if not result.get("ok"):
             logging.error(result['error'])
             return None
 
-        for channel_data in result['channels']:
-            channel = self.q(Channel).filter(Channel.slackid ==
-                                             channel_data['id']).one_or_none()
+        return result['channels']
 
-            if not channel:
-                channel = Channel()
-                self.session.add(channel)
+    def _users_list(self):
+        """
+        Get users list using Slack API. Return list of channel data or None
+        in case of error.
+        """
+        result = self.slack.api_call("users.list", presence=0)
 
-            self._update_channel(channel, channel_data)
+        if not result.get("ok"):
+            logging.error(result['error'])
+            return None
 
-        self.session.commit()
+        return result['channels']
+
+    def _channels_history(self, channel, latest):
+        """
+        Get list of messages using Slack API. Return tuple containing:
+         - list of messages data and returned timestramp if has_more is set
+           to true,
+         - list of messages data and None if has_more is set to false,
+         - empty list and None if there is no messages
+        """
+        result = self.slack.api_call("channels.history",
+                                     channel=channel.slackid, count=1000,
+                                     oldest=latest)
+
+        if not result.get("ok"):
+            logging.error(result['error'])
+            return None, None
+
+        if result['messages']:
+            if result['has_more']:
+                # TODO: this one might be not true, if API will return
+                # messages not sorted by timestamp in descending order
+                return result['messages'], result['messages'][0]['ts']
+            else:
+                return result['messages'], None
+
+        return [], None

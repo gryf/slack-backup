@@ -31,6 +31,8 @@ def main():
     args = parser.parse_args()
 
     slack = client.Client(args.token, args.database)
+    slack.update_users()
+    slack.update_channels()
     slack.update_history(selected_channels=args.channels)
 
 

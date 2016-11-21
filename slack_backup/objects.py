@@ -3,7 +3,7 @@ Convinient object mapping from slack API reponses
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, Float
 from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
@@ -81,6 +81,7 @@ class Channel(Base):
 
     purpose = relationship("Purpose", uselist=False, back_populates="channel")
     topic = relationship("Topic", uselist=False, back_populates="channel")
+    messages = relationship("Message", back_populates="channel")
 
     def __init__(self, data_dict=None):
         self.update(data_dict)
@@ -151,9 +152,12 @@ class User(Base):
     slackid = Column(Text)
 
     channels = relationship("Channel", back_populates="creator")
+    messages = relationship("Message", back_populates="user")
     profile = relationship("UserProfile", uselist=False, back_populates="user")
     purposes = relationship("Purpose", back_populates="creator")
     topics = relationship("Topic", back_populates="creator")
+    reaction_id = Column(Integer, ForeignKey("reactions.id"))
+    reaction = relationship("Reaction", back_populates="users")
 
     def __init__(self, data_dict=None):
         self.update(data_dict)
@@ -178,17 +182,53 @@ class User(Base):
         return u'%s, %s %s' % (self.__class__.__name__, self.id, self.name)
 
 
-class Reactions(object):
+class Reaction(Base):
+    __tablename__ = "reactions"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Text)
+
+    users = relationship("User", back_populates="reaction")
+
+    message_id = Column(Integer, ForeignKey("messages.id"), nullable=True)
+    message = relationship("Message", back_populates="reactions")
+
     def __init__(self, data_dict=None):
+        self.update(data_dict)
+
+    def update(self, data_dict):
         data_dict = data_dict or {}
 
+        self.name = data_dict.get('name', '')
 
-class Messages(object):
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True)
+    ts = Column(Float, index=True)
+    text = Column(Text)
+    type = Column(Text)
+
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True,
+                     index=True)
+    user = relationship("User", back_populates="messages")
+
+    channel_id = Column(Integer, ForeignKey("channels.id"), nullable=True,
+                        index=True)
+    channel = relationship("Channel", back_populates="messages")
+
+    reactions = relationship("Reaction", back_populates="message")
+
     def __init__(self, data_dict=None):
+        self.update(data_dict)
+
+    def datetime(self):
+        return datetime.fromtimestamp(self.ts)
+
+    def update(self, data_dict):
         data_dict = data_dict or {}
 
-        self.ts = data_dict.get('ts', '')
-        self.user_id = data_dict.get('user', '')
-        self.type = data_dict.get('type', '')
+        self.ts = float(data_dict.get('ts', 0))
         self.text = data_dict.get('text', '')
-        self.reactions = Reactions(data_dict.get('reactions', ''))
+        self.type = data_dict.get('subtype', '')

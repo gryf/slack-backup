@@ -4,6 +4,47 @@ from unittest.mock import MagicMock
 from slack_backup import client
 from slack_backup import objects
 
+CHANNELS = {"ok": True,
+            "channels": [{"id": "C00000000",
+                          "name": "somechannel",
+                          "is_channel": True,
+                          "created": 1479147929,
+                          "creator": "UAAAAAAAA",
+                          "is_archived": False,
+                          "is_general": False,
+                          "is_member": True,
+                          "members": ["UAAAAAAAA",
+                                      "UBBBBBBBB",
+                                      "UCCCCCCCC"],
+                          "topic": {"value": "",
+                                    "creator": "",
+                                    "last_set": 0},
+                          "purpose": {"value": "",
+                                      "creator": "",
+                                      "last_set": 0},
+                          "num_members": 7},
+                         {"id": "C00000001",
+                          "name": "general",
+                          "is_channel": True,
+                          "created": 1416042849,
+                          "creator": "USLACKBOT",
+                          "is_archived": False,
+                          "is_general": True,
+                          "is_member": True,
+                          "members": ["UAAAAAAAA",
+                                      "UBBBBBBBB",
+                                      "UCCCCCCCC"],
+                          "topic": {"value": "",
+                                    "creator": "",
+                                    "last_set": 0},
+                          "purpose": {"value": "This channel is for team-wide"
+                                               " communication and "
+                                               "announcements. All team "
+                                               "members are in this channel.",
+                                      "creator": "",
+                                      "last_set": 0},
+                          "num_members": 14}]}
+
 PROFILES = [{'always_active': False,
              'api_app_id': '',
              'avatar_hash': '167c4585f3b5',
@@ -136,19 +177,204 @@ USERS = {'cache_ts': 1479577519,
                       'tz_label': 'Pacific Standard Time',
                       'tz_offset': -28800}]}
 
+MSG2 = {"type": "message",
+        "user": "UCCCCCCCC",
+        "text": "Pellentesque molestie nunc id enim. Etiam mollis tempus "
+                "neque. Duis. per conubia nostra, per",
+        "ts": "1479505026.000002"}
+
+MSGS = {'messages': [{"type": "message",
+                      "user": "UAAAAAAAA",
+                      "text": "Class aptent taciti sociosqu ad litora torquent"
+                              " per conubia nostra, per",
+                      "ts": "1479501074.000032"},
+                     {"reactions": [{"name": "+1",
+                                     "users": ["UBBBBBBBB", "UCCCCCCCC"],
+                                     "count": 2}],
+                      "attachments": [{"service_icon": "https://bla/icon.png",
+                                       "title": "Nulla sollicitudin",
+                                       "thumb_width": 400,
+                                       "thumb_height": 400,
+                                       "from_url": "https://bla",
+                                       "service_name": "Bla",
+                                       "fallback": "Bla: Nulla sollicitudin",
+                                       "title_link": "https://bla/nulla",
+                                       "text": "Bla - bla bla",
+                                       "thumb_url": "https://avatars/1.gif",
+                                       "id": 1}],
+                      "type": "message",
+                      "user": "UCCCCCCCC",
+                      "text": "Mauris ut metus sit amet mi cursus commodo. "
+                              "Morbi congue mauris ac sapien. "
+                              "https://bla/nulla",
+                      "ts": "1479493038.000029"},
+                     {"subtype": "pinned_item",
+                      "item": {"mode": "hosted",
+                               "size": 2949,
+                               "comments_count": 1,
+                               "timestamp": 1479146954,
+                               "url_private_download": "https://files.slack."
+                                                       "com/files-pri/bin.bin",
+                               "is_external": False,
+                               "external_type": "",
+                               "username": "",
+                               "display_as_bot": False,
+                               "pinned_to": ["C00000001"],
+                               "permalink_public": "https://slack-files.com/"
+                                                   "hash",
+                               "channels": ["C00000001"],
+                               "title": "binary.prg",
+                               "ims": [],
+                               "url_private": "https://files.slack.com/hash/"
+                                              "binary.prg",
+                               "groups": [],
+                               "filetype": "binary",
+                               "user": "UAAAAAAAA",
+                               "initial_comment": {"is_intro": True,
+                                                   "user": "UAAAAAAAA",
+                                                   "channel": "",
+                                                   "timestamp": 1479146954,
+                                                   "created": 1479146954,
+                                                   "comment": "sample image",
+                                                   "id": "Fc331R6CNT"},
+                               "permalink": "https://bla.slack.com/files/borg/"
+                                            "F331R60LX/binary.prg",
+                               "name": "Conan.hires.prg",
+                               "num_stars": 1,
+                               "public_url_shared": False,
+                               "is_public": True,
+                               "mimetype": "application/octet-stream",
+                               "created": 1479146954,
+                               "id": "F331R60LX",
+                               "pretty_type": "Binary",
+                               "editable": False},
+                      "item_type": "F",
+                      "type": "message",
+                      "user": "UAAAAAAAA",
+                      "text": "<@UAAAAAAAA|borg> pinned their Binary "
+                              "<https://bla.slack.com/files/borg/F331R60LX/"
+                              "binary.prg|Binary.prg> to this channel.",
+                      "ts": "1479146975.000197"},
+                     {"type": "message",
+                      "subtype": "channel_join",
+                      "user": "UAAAAAAAA",
+                      "text": "<@UAAAAAAAA|borg> has joined the channel",
+                      "ts": "1479108214.000002"},
+                     {"display_as_bot": False,
+                      "subtype": "file_share",
+                      "username": "<@UCCCCCCCC|name2>",
+                      "file": {"thumb_960": "https://files.slack.com/files-tmb"
+                                            "/hash/screenshot_960.png",
+                               "user": "UCCCCCCCC",
+                               "size": 77222,
+                               "thumb_1024_h": 754,
+                               "timestamp": 1479407569,
+                               "url_private_download": "https://files.slack.co"
+                                                       "m/files-pri/hsh/downlo"
+                                                       "ad/screenshot.png",
+                               "thumb_360": "https://files.slack.com/files-tmb"
+                                            "/hash/screenshot_360.png",
+                               "username": "",
+                               "external_type": "",
+                               "thumb_64": "https://files.slack.com/files-tmb/"
+                                           "hash/screenshot_64.png",
+                               "created": 1479407569,
+                               "ims": [],
+                               "groups": [],
+                               "filetype": "png",
+                               "thumb_1024": "https://files.slack.com/files-"
+                                             "tmb/hash/screenshot_1024.png",
+                               "original_w": 1193,
+                               "name": "Screenshot.png",
+                               "thumb_360_h": 265,
+                               "is_public": True,
+                               "thumb_960_h": 707,
+                               "original_h": 878,
+                               "mimetype": "image/png",
+                               "id": "F3405RRB5",
+                               "pretty_type": "PNG",
+                               "editable": False,
+                               "thumb_960_w": 960,
+                               "thumb_80": "https://files.slack.com/files-tmb/"
+                                           "hash/screenshot_80.png",
+                               "comments_count": 0,
+                               "image_exif_rotation": 1,
+                               "thumb_160": "https://files.slack.com/files-tmb"
+                                            "/hash/screenshot_160.png",
+                               "thumb_480_w": 480,
+                               "is_external": False,
+                               "display_as_bot": False,
+                               "thumb_720_h": 530,
+                               "channels": ["C00000001"],
+                               "title": "Screenshot.png",
+                               "thumb_480": "https://files.slack.com/files-tmb"
+                                            "/hash/screenshot_480.png",
+                               "url_private": "https://files.slack.com/files-"
+                                              "pri/hsh/screenshot.png",
+                               "mode": "hosted",
+                               "thumb_1024_w": 1024,
+                               "permalink": "https://esm64.slack.com/files/"
+                                            "name2/F3405RRB5/screenshot.png",
+                               "thumb_480_h": 353,
+                               "public_url_shared": False,
+                               "thumb_720": "https://files.slack.com/files-tmb"
+                                            "/hash/screenshot_720.png",
+                               "thumb_360_w": 360,
+                               "permalink_public": "https://slack-files.com/"
+                                                   "hsh-7dbb96b758",
+                               "thumb_720_w": 720},
+                      "type": "message",
+                      "user": "UCCCCCCCC",
+                      "bot_id": None,
+                      "text": "<@UCCCCCCCC|name2> uploaded a file: "
+                              "<https://esm64.slack.com/files/name2/F3405RRB5/"
+                              "screenshot.png|Screenshot.png>",
+                      "ts": "1478107371.000052",
+                      "upload": True}],
+        "ok": True,
+        "latest": "1479501075.000020",
+        "has_more": False}
+
+
+class TestApiCalls(unittest.TestCase):
+
+    def setup(self):
+        print("asd")
+
+    def test_channels_list(self):
+        self.assertTrue(1)
+
+    def test_users_list(self):
+        self.assertTrue(1)
+
+    def test_channels_history(self):
+        self.assertTrue(1)
+
 
 class TestClient(unittest.TestCase):
 
     def test_update_users(self):
         cl = client.Client("token string")
         cl.slack.api_call = MagicMock(return_value=USERS)
-        cl._update_users()
+        cl.update_users()
         users = cl.session.query(objects.User).all()
         self.assertEqual(len(users), 4)
         self.assertEqual(users[0].id, 1)
 
-        cl._update_users()
+        cl.update_users()
         users = cl.session.query(objects.User).all()
         self.assertEqual(len(users), 4)
         self.assertEqual(users[0].id, 1)
         self.assertEqual(users[0].slackid, 'UAAAAAAAA')
+
+
+class TestMessage(unittest.TestCase):
+
+    def setUp(self):
+        self.cl = client.Client('token string')
+        self.cl.slack.api_call = MagicMock()
+
+    def test_create_message(self):
+
+        cl = client.Client("token string")
+        cl.slack.api_call = MagicMock(return_value=MSGS)

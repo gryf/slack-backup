@@ -17,7 +17,7 @@ class Client(object):
         self.session = db.Session()
         self.q = self.session.query
 
-    def get_hisotry(self, selected_channels=None, from_date=0):
+    def update_history(self, selected_channels=None, from_date=0):
 
         self._update_users()
         self._update_channels()
@@ -45,7 +45,6 @@ class Client(object):
         return history
 
     def _get_channel_history(self, channel, latest='now'):
-        return [], None
         result = self.slack.api_call("channels.history",
                                      channel=channel.slackid, count=1000,
                                      latest=latest)

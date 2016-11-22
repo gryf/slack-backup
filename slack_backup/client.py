@@ -1,21 +1,49 @@
 """
 Create backup for certain date for specified channel in slack
 """
-import logging
 from datetime import datetime
+import getpass
+import logging
 
 import slackclient
 
 from slack_backup import db
 from slack_backup import objects as o
+from slack_backup import download
 
 
 class Client(object):
-    def __init__(self, token, dbfilename=None):
-        self.slack = slackclient.SlackClient(token)
-        self.engine = db.connect(dbfilename)
+    """
+    This class is intended to provide an interface for getting, storing and
+    querying data fetched out using Slack API.
+    """
+    def __init__(self, args):
+        self.slack = slackclient.SlackClient(args.token)
+        self.engine = db.connect(args.dbfilename)
         self.session = db.Session()
+        self.selected_channels = args.channels
+        self.user = args.user
+        self.password = args.password
+        if not self.user and not self.password:
+            logging.warning('No media will be downloaded, due to not '
+                            'providing credentials for a slack account')
+        elif not self.user and self.password:
+            logging.warning('No media will be downloaded, due to not '
+                            'providing username for a slack account')
+        elif self.user and not self.password:
+            self.password = getpass.getpass(prompt='Provide password for '
+                                            'your slack account: ')
         self.q = self.session.query
+        self.dld = download.Download(args.user, args.password, args.team)
+
+    def update(self):
+        """
+        Perform an update, store data to db
+        """
+        self.dld.authorize()
+        self.update_users()
+        self.update_channels()
+        self.update_history()
 
     def update_channels(self):
         """Fetch and update channel list with current state in db"""
@@ -24,7 +52,7 @@ class Client(object):
         if not result:
             return
 
-        for channel_data in result['channels']:
+        for channel_data in result:
             channel = self.q(o.Channel).\
                 filter(o.Channel.slackid == channel_data['id']).one_or_none()
 
@@ -57,19 +85,19 @@ class Client(object):
 
         self.session.commit()
 
-    def update_history(self, selected_channels=None):
+    def update_history(self):
         """
         Get the latest or all messages out of optionally selected channels
         """
 
-        channels = self.q(o.Channel).all()
-        if selected_channels:
-            selected_channels = [c for c in channels
-                                 if c.name in selected_channels]
+        all_channels = self.q(o.Channel).all()
+        if self.selected_channels:
+            channels = [c for c in all_channels
+                        if c.name in self.selected_channels]
         else:
-            selected_channels = channels
+            channels = all_channels
 
-        for channel in selected_channels:
+        for channel in channels:
             latest = self.q(o.Message).\
                 filter(o.Message.channel == channel).\
                 order_by(o.Message.ts.desc()).first()
@@ -87,6 +115,10 @@ class Client(object):
         self.session.commit()
 
     def _create_message(self, data, channel):
+        """
+        Create message with corresponding possible metadata, like reactions,
+        files etc.
+        """
         message = o.Message(data)
         message.user = self.q(o.User).\
             filter(o.User.slackid == data['user']).one()
@@ -94,9 +126,17 @@ class Client(object):
 
         if 'reactions' in data:
             for reaction_data in data['reactions']:
-                o.Message.reactions.append(o.Reaction(reaction_data))
+                message.reactions.append(o.Reaction(reaction_data))
 
-        self.session.add(o.Message)
+        if data.get('subtype') == 'file_share':
+            message.file = o.File()
+            if data['file']['is_external']:
+                message.file.url = data['file']['url_private']
+            else:
+                priv_url = data['file']['url_private_download']
+                message.file.url = self.dld.get_local_url(priv_url)
+
+        self.session.add(message)
 
     def _get_create_obj(self, data, classobj, channel):
         """
@@ -162,7 +202,7 @@ class Client(object):
             logging.error(result['error'])
             return None
 
-        return result['channels']
+        return result['members']
 
     def _channels_history(self, channel, latest):
         """

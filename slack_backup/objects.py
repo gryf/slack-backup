@@ -219,6 +219,7 @@ class Message(Base):
     channel = relationship("Channel", back_populates="messages")
 
     reactions = relationship("Reaction", back_populates="message")
+    files = relationship("File", back_populates="message")
 
     def __init__(self, data_dict=None):
         self.update(data_dict)
@@ -232,3 +233,15 @@ class Message(Base):
         self.ts = float(data_dict.get('ts', 0))
         self.text = data_dict.get('text', '')
         self.type = data_dict.get('subtype', '')
+
+
+class File(Base):
+    __tablename__ = "files"
+
+    id = Column(Integer, primary_key=True)
+    url = Column(Text)
+    thumbnail = Column(Text)
+    relative_path = Column(Text)
+
+    message_id = Column(Integer, ForeignKey('messages.id'))
+    message = relationship('Message', back_populates='files')

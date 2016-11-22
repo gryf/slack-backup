@@ -1,8 +1,8 @@
-import unittest
+from unittest import TestCase
 from unittest.mock import MagicMock
 
 from slack_backup import client
-from slack_backup import objects
+from slack_backup import objects as o
 
 CHANNELS = {"ok": True,
             "channels": [{"id": "C00000000",
@@ -177,12 +177,6 @@ USERS = {'cache_ts': 1479577519,
                       'tz_label': 'Pacific Standard Time',
                       'tz_offset': -28800}]}
 
-MSG2 = {"type": "message",
-        "user": "UCCCCCCCC",
-        "text": "Pellentesque molestie nunc id enim. Etiam mollis tempus "
-                "neque. Duis. per conubia nostra, per",
-        "ts": "1479505026.000002"}
-
 MSGS = {'messages': [{"type": "message",
                       "user": "UAAAAAAAA",
                       "text": "Class aptent taciti sociosqu ad litora torquent"
@@ -333,48 +327,116 @@ MSGS = {'messages': [{"type": "message",
                       "upload": True}],
         "ok": True,
         "latest": "1479501075.000020",
-        "has_more": False}
+        "has_more": True}
+
+MSG2 = {'messages': [{"type": "message",
+                      "user": "UCCCCCCCC",
+                      "text": "Pellentesque molestie nunc id enim. Etiam "
+                              "mollis tempus neque. Duis. per conubia "
+                              "nostra, per",
+                      "ts": "1479505026.000002"}],
+        "ok": True,
+        "latest": "1479505026.000003",
+        "has_more": True}
+
+MSG3 = {"ok": True,
+        "oldest": "1479505026.000003",
+        "messages": [],
+        "has_more": False,
+        "is_limited": False}
 
 
-class TestApiCalls(unittest.TestCase):
+class FakeArgs(object):
+    token = 'token_string'
+    user = 'fake_user'
+    password = 'fake_password'
+    team = 'fake_team'
+    dbfilename = None
+    channels = None
 
-    def setup(self):
-        print("asd")
+
+class TestApiCalls(TestCase):
 
     def test_channels_list(self):
-        self.assertTrue(1)
+        cl = client.Client(FakeArgs())
+        cl.slack.api_call = MagicMock(return_value=CHANNELS)
+        channels = cl._channels_list()
+        self.assertListEqual(CHANNELS['channels'], channels)
 
     def test_users_list(self):
-        self.assertTrue(1)
+        cl = client.Client(FakeArgs())
+        cl.slack.api_call = MagicMock(return_value=USERS)
+        users = cl._users_list()
+        self.assertListEqual(USERS['members'], users)
 
     def test_channels_history(self):
-        self.assertTrue(1)
+        cl = client.Client(FakeArgs())
 
-
-class TestClient(unittest.TestCase):
-
-    def test_update_users(self):
-        cl = client.Client("token string")
         cl.slack.api_call = MagicMock(return_value=USERS)
         cl.update_users()
-        users = cl.session.query(objects.User).all()
+
+        cl.slack.api_call = MagicMock(return_value=CHANNELS)
+        cl.update_channels()
+
+        cl.slack.api_call = MagicMock()
+        cl.slack.api_call.side_effect = [MSGS, MSG2, MSG3]
+
+        channel = cl.q(o.Channel).filter(o.Channel.slackid ==
+                                         "C00000001").one()
+
+        msg, ts = cl._channels_history(channel, 0)
+        self.assertEqual(len(msg), 5)
+        self.assertEqual(ts, '1479501074.000032')
+
+        msg, ts = cl._channels_history(channel, ts)
+        self.assertEqual(len(msg), 1)
+        self.assertEqual(ts, '1479505026.000002')
+
+        msg, ts = cl._channels_history(channel, ts)
+        self.assertEqual(len(msg), 0)
+        self.assertIsNone(ts)
+
+
+class TestClient(TestCase):
+
+    def test_update_users(self):
+        cl = client.Client(FakeArgs())
+        cl.slack.api_call = MagicMock(return_value=USERS)
+        cl.update_users()
+        users = cl.session.query(o.User).all()
         self.assertEqual(len(users), 4)
         self.assertEqual(users[0].id, 1)
 
         cl.update_users()
-        users = cl.session.query(objects.User).all()
+        users = cl.session.query(o.User).all()
         self.assertEqual(len(users), 4)
         self.assertEqual(users[0].id, 1)
         self.assertEqual(users[0].slackid, 'UAAAAAAAA')
 
 
-class TestMessage(unittest.TestCase):
+class TestMessage(TestCase):
 
     def setUp(self):
-        self.cl = client.Client('token string')
+        args = FakeArgs()
+        args.channels = ['general']
+
+        self.cl = client.Client(args)
+        self.cl.dld.authorize = MagicMock()
+        self.cl.slack.api_call = MagicMock(return_value=USERS)
+        self.cl.update_users()
+
+        self.cl.slack.api_call = MagicMock(return_value=CHANNELS)
+        self.cl.update_channels()
+
         self.cl.slack.api_call = MagicMock()
 
-    def test_create_message(self):
+    def test_update_history(self):
 
-        cl = client.Client("token string")
-        cl.slack.api_call = MagicMock(return_value=MSGS)
+        self.cl.slack.api_call.side_effect = [MSGS, MSG3]
+        self.cl.update_history()
+        self.assertEqual(len(self.cl.q(o.Message).all()), 5)
+
+        self.cl.slack.api_call.side_effect = [MSG2, MSG3]
+        self.cl.update_history()
+
+        self.assertEqual(len(self.cl.q(o.Message).all()), 6)

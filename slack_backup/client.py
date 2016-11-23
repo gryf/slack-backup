@@ -19,57 +19,59 @@ class Client(object):
     """
     def __init__(self, args):
         self.slack = slackclient.SlackClient(args.token)
-        self.engine = db.connect(args.dbfilename)
+        self.engine = db.connect(args.database)
         self.session = db.Session()
         self.selected_channels = args.channels
         self.user = args.user
         self.password = args.password
         if not self.user and not self.password:
-            logging.warning('No media will be downloaded, due to not '
+            log.warning('No media will be downloaded, due to not '
                             'providing credentials for a slack account')
         elif not self.user and self.password:
-            logging.warning('No media will be downloaded, due to not '
+            log.warning('No media will be downloaded, due to not '
                             'providing username for a slack account')
         elif self.user and not self.password:
             self.password = getpass.getpass(prompt='Provide password for '
                                             'your slack account: ')
         self.q = self.session.query
-        self.dld = download.Download(args.user, args.password, args.team)
+        self.downloader = download.Download(args)
 
     def update(self):
         """
         Perform an update, store data to db
         """
-        self.dld.authorize()
+        self.downloader.authorize()
         self.update_users()
         self.update_channels()
         self.update_history()
 
     def update_channels(self):
         """Fetch and update channel list with current state in db"""
+        log.info("Fetching and update channels information in DB")
         result = self._channels_list()
 
         if not result:
             return
 
-        for channel_data in result:
+        for data in result:
             channel = self.q(o.Channel).\
-                filter(o.Channel.slackid == channel_data['id']).one_or_none()
+                filter(o.Channel.slackid == data['id']).one_or_none()
 
             if not channel:
                 channel = o.Channel()
                 self.session.add(channel)
 
-            self._update_channel(channel, channel_data)
+            self._update_channel(channel, data)
 
         self.session.commit()
 
     def update_users(self):
         """Fetch and update user list with current state in db"""
+        log.info("Fetching and updating user information in DB")
         result = self.slack.api_call("users.list", presence=0)
 
         if not result.get("ok"):
-            logging.error(result['error'])
+            log.error(result['error'])
             return
 
         for user_data in result['members']:

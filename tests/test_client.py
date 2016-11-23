@@ -351,8 +351,9 @@ class FakeArgs(object):
     user = 'fake_user'
     password = 'fake_password'
     team = 'fake_team'
-    dbfilename = None
+    database = None
     channels = None
+    assets = 'assets'
 
 
 class TestApiCalls(TestCase):
@@ -421,7 +422,7 @@ class TestMessage(TestCase):
         args.channels = ['general']
 
         self.cl = client.Client(args)
-        self.cl.dld.authorize = MagicMock()
+        self.cl.downloader.authorize = MagicMock()
         self.cl.slack.api_call = MagicMock(return_value=USERS)
         self.cl.update_users()
 

@@ -3,40 +3,54 @@
 """
 Create backup for certain date for specified channel in slack
 """
+from six.moves import builtins
 import argparse
-import json
 
 from slack_backup import client
+from slack_backup import logger
 
-
-def channel_list(string):
-    return string.split(',')
 
 def main():
     """Main function"""
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--token', required=True, help='Slack token - '
                         'a string, which can be generated/obtained via '
-                        'https://api.slack.com/docs/oauth-test-tokens page')
+                        'https://api.slack.com/docs/oauth-test-tokens page.')
     parser.add_argument('-d', '--database', default='',
-                        help='Path to the database file')
-    parser.add_argument('-f', '--format', default='text',
-                        choices=('text', 'json', 'html', 'none'),
+                        help='Path to the database file.')
+    parser.add_argument('-f', '--format', default='none',
+                        choices=('text', 'none'),
                         help='Output format. Default is none; only database '
                         'is updated by latest messages for all/selected '
                         'channels.')
     parser.add_argument('-c', '--channels', default=[], nargs='+',
                         help='List of channels to perform actions on. '
-                        'Default is all channels')
-    parser.add_argument('-t', '--team', default='', help='team name, which is'
+                        'Default is all channels.')
+    parser.add_argument('-u', '--user', default='', help='Username for your '
+                        'Slack account')
+    parser.add_argument('-p', '--password', default='', help='Password for your '
+                        'Slack account.')
+    parser.add_argument('-e', '--team', default='', help='Team name, which is'
                         ' part of slack url, for example: if url is '
                         '"https://team.slack.com" than "team" is a name of '
                         'the team.')
+    parser.add_argument('-a', '--assets', default='assets', help='Directory '
+                        'where to put downloaded files and images, "assets" '
+                        'by default.')
+    parser.add_argument('-v', '--verbose', help='Be verbose. Adding more "v"'
+                        'will increase verbosity', action="count", default=0)
+    parser.add_argument('-q', '--quiet', help='Be quiet. Adding more "q"'
+                        'will decrease verbosity', action="count", default=0)
+
+
     args = parser.parse_args()
+
+    builtins.log = logger.Logger('slack_backup')()
+    log.set_verbose(args.verbose, args.quiet)
 
     slack = client.Client(args)
     slack.update()
-    # slack.generate_history(Reporter(args.format))
+    slack.generate_history()
 
 
 if __name__ == "__main__":

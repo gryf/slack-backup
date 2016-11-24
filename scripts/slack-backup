@@ -3,11 +3,10 @@
 """
 Create backup for certain date for specified channel in slack
 """
-from six.moves import builtins
 import argparse
+import logging
 
 from slack_backup import client
-from slack_backup import logger
 
 
 def main():
@@ -37,16 +36,30 @@ def main():
     parser.add_argument('-a', '--assets', default='assets', help='Directory '
                         'where to put downloaded files and images, "assets" '
                         'by default.')
+    parser.add_argument('-o', '--outputdir', default='logs', help="Output "
+                        "directory for store logs. All logs are organised per"
+                        " channel. By default it\'s `logs' directory")
     parser.add_argument('-v', '--verbose', help='Be verbose. Adding more "v"'
                         'will increase verbosity', action="count", default=0)
     parser.add_argument('-q', '--quiet', help='Be quiet. Adding more "q"'
                         'will decrease verbosity', action="count", default=0)
 
-
     args = parser.parse_args()
 
-    builtins.log = logger.Logger('slack_backup')()
-    log.set_verbose(args.verbose, args.quiet)
+    level = logging.WARNING
+
+    if args.quiet:
+        level = logging.ERROR
+        if args.quiet > 1:
+            level = logging.CRITICAL
+
+    if args.verbose:
+        level = logging.INFO
+        if args.verbose > 1:
+            level = logging.DEBUG
+
+    logging.basicConfig(level=level,
+                        format="%(asctime)s %(levelname)s: %(message)s")
 
     slack = client.Client(args)
     slack.update()

@@ -1,5 +1,8 @@
 from unittest import TestCase
-from unittest.mock import MagicMock
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import MagicMock
 
 from slack_backup import client
 from slack_backup import objects as o

@@ -3,7 +3,7 @@ Convinient object mapping from slack API reponses
 """
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey, Float
+from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
@@ -118,6 +118,7 @@ class UserProfile(Base):
     last_name = Column(Text)
     real_name = Column(Text)
     real_name_normalized = Column(Text)
+    image_path = Column(Text)
 
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     user = relationship("User", back_populates="profile")
@@ -206,9 +207,18 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True)
-    ts = Column(Float, index=True)
+    # NOTE(gryf): timestamp from messages are coming as text. It might be
+    # tempting to store them as Decimal or Integer, but it doesn't really
+    # matters since in case of Decimal sqlite doesn't support it, and Integer
+    # require additional conversion. It might be critical for messages to have
+    # exact timestamp including microseconds, since it will be extracted for
+    # API query. Such query have an option for specify timestam which is the
+    # oldest, that's why it could be easy to lost some messages if the
+    # difference would be on microseconds level.
+    ts = Column(Text, index=True)
     text = Column(Text)
     type = Column(Text)
+    is_starred = Column(Boolean, default=False)
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True,
                      index=True)
@@ -220,6 +230,7 @@ class Message(Base):
 
     reactions = relationship("Reaction", back_populates="message")
     files = relationship("File", back_populates="message")
+    attachments = relationship("Attachment", back_populates="message")
 
     def __init__(self, data_dict=None):
         self.update(data_dict)
@@ -230,7 +241,7 @@ class Message(Base):
     def update(self, data_dict):
         data_dict = data_dict or {}
 
-        self.ts = float(data_dict.get('ts', 0))
+        self.ts = data_dict.get('ts', 0)
         self.text = data_dict.get('text', '')
         self.type = data_dict.get('subtype', '')
 
@@ -240,8 +251,40 @@ class File(Base):
 
     id = Column(Integer, primary_key=True)
     url = Column(Text)
-    thumbnail = Column(Text)
-    relative_path = Column(Text)
+    name = Column(Text)
+    title = Column(Text)
+    filepath = Column(Text)
 
     message_id = Column(Integer, ForeignKey('messages.id'))
     message = relationship('Message', back_populates='files')
+
+    def __init__(self, data_dict=None):
+        self.update(data_dict)
+
+    def update(self, data_dict):
+        data_dict = data_dict or {}
+
+        self.name = data_dict.get('name', '')
+        self.title = data_dict.get('title', '')
+
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(Text)
+    fallback = Column(Text)
+    text = Column(Text)
+
+    message_id = Column(Integer, ForeignKey('messages.id'))
+    message = relationship('Message', back_populates='attachments')
+
+    def __init__(self, data_dict=None):
+        self.update(data_dict)
+
+    def update(self, data_dict):
+        data_dict = data_dict or {}
+
+        self.title = data_dict.get('title', '')
+        self.text = data_dict.get('text', '')
+        self.fallback = data_dict.get('fallback', '')

@@ -1,6 +1,8 @@
 """
 Common db functions
 """
+import logging
+
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,6 +25,8 @@ def connect(filename=None):
     global DbFilename
 
     if not filename:
+        logging.warning('Using in-memory database. Will disappear after '
+                        'program ends. This is probably not what you expect.')
         filename = ':memory:'
 
     DbFilename = filename

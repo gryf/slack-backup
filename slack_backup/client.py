@@ -4,12 +4,14 @@ Create backup for certain date for specified channel in slack
 from datetime import datetime
 import getpass
 import logging
+import os
 
 import slackclient
 
 from slack_backup import db
 from slack_backup import objects as o
 from slack_backup import download
+from slack_backup import reporters
 
 
 class Client(object):
@@ -18,23 +20,28 @@ class Client(object):
     querying data fetched out using Slack API.
     """
     def __init__(self, args):
-        self.slack = slackclient.SlackClient(args.token)
+        if 'token' in args:
+            self.slack = slackclient.SlackClient(args.token)
+            self.user = args.user
+            self.password = args.password
+            if not self.user and not self.password:
+                logging.warning('No media will be downloaded, due to not '
+                                'providing credentials for a slack account')
+            elif not self.user and self.password:
+                logging.warning('No media will be downloaded, due to not '
+                                'providing username for a slack account')
+            elif self.user and not self.password:
+                self.password = getpass.getpass(prompt='Provide password for '
+                                                'your slack account: ')
+            dbpath = self._get_asset_dir(args.database)
+            self.downloader = download.Download(args, dbpath)
         self.engine = db.connect(args.database)
         self.session = db.Session()
         self.selected_channels = args.channels
-        self.user = args.user
-        self.password = args.password
-        if not self.user and not self.password:
-            logging.warning('No media will be downloaded, due to not '
-                            'providing credentials for a slack account')
-        elif not self.user and self.password:
-            logging.warning('No media will be downloaded, due to not '
-                            'providing username for a slack account')
-        elif self.user and not self.password:
-            self.password = getpass.getpass(prompt='Provide password for '
-                                            'your slack account: ')
         self.q = self.session.query
-        self.downloader = download.Download(args)
+
+        if 'format' in args:
+            self.reporter = reporters.get_reporter(args, self.q)
 
     def update(self):
         """
@@ -117,6 +124,7 @@ class Client(object):
             latest = latest and latest.ts or 1
 
             while True:
+                logging.debug("Fetching another portion of messages")
                 messages, latest = self._channels_history(channel, latest)
 
                 for msg in messages:
@@ -131,13 +139,13 @@ class Client(object):
         """
         Return a history accumulated in DB into desired format. Special format
         """
+        self.reporter.generate()
 
     def _create_message(self, data, channel):
         """
         Create message with corresponding possible metadata, like reactions,
         files etc.
         """
-        logging.info("Fetching messages for channel %s", channel.name)
         message = o.Message(data)
         message.user = self.q(o.User).\
             filter(o.User.slackid == data['user']).one()
@@ -173,8 +181,11 @@ class Client(object):
             message.is_starred = True
 
         if is_external:
+            logging.debug("Found external file `%s'", data['url_private'])
             message.file.url = data['url_private']
         else:
+            logging.debug("Found internal file `%s'",
+                          data['url_private_download'])
             priv_url = data['url_private_download']
             message.file.filepath = self.downloader.download(priv_url, 'file')
 
@@ -227,6 +238,17 @@ class Client(object):
                                                channel)
         channel.topic = self._get_create_obj(data['topic'], o.Topic, channel)
         self.session.flush()
+
+    def _get_asset_dir(self, database):
+        """
+        Get absolute assets directory using sqlite database path as a
+        reference.
+        """
+        if not database:
+            return 'assets'
+
+        path = os.path.dirname(os.path.abspath(database))
+        return os.path.join(path, 'assets')
 
     def _channels_list(self):
         """

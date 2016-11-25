@@ -4,9 +4,10 @@ to local ones, so that sophisticated writers can make a use of it
 """
 import logging
 import os
-import errno
 
 import requests
+
+from slack_backup import utils
 
 
 class NotAuthorizedError(requests.HTTPError):
@@ -16,15 +17,15 @@ class NotAuthorizedError(requests.HTTPError):
 class Download(object):
     """Download class for taking care of Slack internally uploaded files"""
 
-    def __init__(self, args):
+    def __init__(self, args, assets_dir):
         self.session = requests.session()
         self.team = args.team
         self.user = args.user
         self.password = args.password
-        self.assets_dir = args.assets
+        self.assets_dir = assets_dir
         self._files = os.path.join(self.assets_dir, 'files')
         self._images = os.path.join(self.assets_dir, 'images')
-        self._do_download = False
+        self._authorized = False
         self._hier_created = False
         self.cookies = {}
 
@@ -32,8 +33,6 @@ class Download(object):
         """
         Download asset, return local path to it
         """
-        if not self._do_download:
-            return
 
         if not self._hier_created:
             self._create_assets_dir()
@@ -44,12 +43,8 @@ class Download(object):
         return fname
 
     def _create_assets_dir(self):
-        for name in ('images', 'files'):
-            try:
-                os.makedirs(os.path.join(self.assets_dir, name))
-            except OSError as err:
-                if err.errno != errno.EEXIST:
-                    raise
+        for path in (self._files, self._images):
+            utils.makedirs(path)
 
         self._hier_created = True
 
@@ -58,6 +53,11 @@ class Download(object):
 
         typemap = {'avatar': self._images,
                    'file': self._files}
+
+        if filetype == 'file' and not self._authorized:
+            logging.info("There was no (valid) credentials passed, therefore "
+                         "file `%s' cannot be downloaded", url)
+            return
 
         splitted = url.split('/')
 
@@ -72,12 +72,8 @@ class Download(object):
         path = typemap[filetype]
 
         if part:
-            try:
-                path = os.path.join(path, part)
-                os.makedirs(path)
-            except OSError as err:
-                if err.errno != errno.EEXIST:
-                    raise
+            utils.makedirs(os.path.join(path, part))
+            path = os.path.join(path, part)
 
         path = os.path.join(path, fname)
         count = 1
@@ -91,11 +87,18 @@ class Download(object):
     def _download(self, url, local):
         """Download file"""
 
-        res = self.session.get(url, stream=True)
+        try:
+            res = self.session.get(url, stream=True)
+        except requests.exceptions.RequestException as exc:
+            logging.error('Request for %s failed. Reported reason: %s',
+                          url, exc.__doc__)
+            raise
+
         with open(local, 'wb') as fobj:
             for chunk in res.iter_content(chunk_size=5120):
                 if chunk:
                     fobj.write(chunk)
+        logging.debug("Downloaded `%s' to `'%s'", url, local)
 
     def authorize(self):
         """
@@ -126,4 +129,4 @@ class Download(object):
                 ('a-' + self.cookies['a']) in self.cookies):
             logging.error('Failed to login into Slack app')
         else:
-            self._do_download = True
+            self._authorized = True

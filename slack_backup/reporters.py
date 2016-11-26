@@ -10,9 +10,14 @@ import os
 import errno
 import logging
 import re
+try:
+    from html.parser import HTMLParser
+except ImportError:
+    from HTMLParser import HTMLParser
 
 from slack_backup import objects as o
 from slack_backup import utils
+from slack_backup import emoji
 
 
 class Reporter(object):
@@ -40,16 +45,18 @@ class Reporter(object):
                                     'file': '📂',
                                     'topic': '🟅',
                                     'separator': '│'}}
+        self.emoji = emoji.EMOJI.get(args.theme, {})
 
         self.channels = self._get_channels(args.channels)
         self.users = self.q(o.User).all()
-        self._re_first_idnick = re.compile(r'^(?P<replace>'
-                                           r'<@(?P<slackid>U[A-Z,0-9]+)\|.+>)')
-        self._re_first_id = re.compile('^(?P<replace>'
-                                       '<@(?P<slackid>U[A-Z,0-9]+)>)')
-        self._re_idnick = re.compile(r'.*(?P<replace>'
-                                     r'<@(?P<slackid>U[A-Z,0-9]+)\|.+>)')
-        self._re_id = re.compile('.*(?P<replace><@(?P<slackid>U[A-Z,0-9]+)>)')
+        self._slackid_pat = [re.compile(r'^(?P<replace>'
+                                        r'<@(?P<slackid>U[A-Z,0-9]+)\|.+>)'),
+                             re.compile('^(?P<replace>'
+                                        '<@(?P<slackid>U[A-Z,0-9]+)>)'),
+                             re.compile(r'.*(?P<replace>'
+                                        r'<@(?P<slackid>U[A-Z,0-9]+)\|.+>)'),
+                             re.compile('.*(?P<replace><@(?P<slackid>'
+                                        'U[A-Z,0-9]+)>)')]
 
     def generate(self):
         """Generate raport it's a dummmy one - for use with none reporter"""
@@ -154,11 +161,9 @@ class TextReporter(Reporter):
         """
         msg_txt = self._filter_slackid(msg.text)
         msg_txt = self._fix_newlines(msg_txt)
+        for emoticon in self.emoji:
+            msg_txt = msg_txt.replace(emoticon, self.emoji[emoticon])
         formatter = self.types.get(msg.type, self._msg)
-        if not msg_txt.strip():
-            logging.info("Skipping message from `%s' since it's empty",
-                         msg.user.name)
-            return ''
 
         return formatter(msg, msg_txt)
 
@@ -202,8 +207,9 @@ class TextReporter(Reporter):
 
     def _msg_file(self, msg, text):
         """return formatter for file"""
-        groups = self._re_first_idnick.match(msg.text).groupdict()
+        groups = self._slackid_pat[0].match(msg.text).groupdict()
         text = msg.text.replace(groups['replace'], '')
+        text = self._filter_slackid(msg.text)
         filename = msg.file.filepath
         if filename:
             filename = os.path.relpath(msg.file.filepath, start=self.out)
@@ -211,13 +217,17 @@ class TextReporter(Reporter):
             filename = msg.file.url
 
         if not filename:
-            logging.warning("Dude, we have a file object, but nothing has "
-                            "found. Name of the file object is `i%s'",
+            logging.warning("There is have a file object, but nothing has "
+                            "found. Name of the file object is `%s'",
                             msg.file.name)
             filename = msg.file.name
 
         text = self._filter_slackid(text)
+        text = self._remove_entities(text)
         text = self._fix_newlines(text)
+
+        for emoticon in self.emoji:
+            text = text.replace(emoticon, self.emoji[emoticon])
 
         data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': text,
@@ -230,24 +240,40 @@ class TextReporter(Reporter):
                 'shared file "{filename}"{msg}\n'.format(**data))
 
     def _msg(self, msg, text):
-        """return formatter for /me"""
+        """return formatter for all other message types"""
+
         data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': text,
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
                 'nick': msg.user.name}
-        return '{date} {nick:>{max_len}} {separator} {msg}\n'.format(**data)
+        result = '{date} {nick:>{max_len}} {separator} {msg}\n'.format(**data)
+
+        if msg.attachments:
+            for att in msg.attachments:
+                if att.title:
+                    att_text = "\n" + att.title + '\n'
+                else:
+                    att_text = "\n" + self._fix_newlines(att.fallback) + '\n'
+
+                if att.text:
+                    att_text += att.text
+
+                att_text = self._fix_newlines(att_text)
+                # remove first newline
+                att_text = att_text[1:]
+
+                result += att_text + '\n'
+
+        return result
+
+    def _remove_entities(self, text):
+        """replace html entites into appropriate chars"""
+        text = HTMLParser().unescape(text)
 
     def _filter_slackid(self, text):
         """filter out all of the id from slack"""
-        for pat in (self._re_first_idnick, self._re_first_id):
-            while pat.search(text):
-                groups = pat.search(text).groupdict('slackid')
-                user = [u for u in self.users
-                        if u.slackid == groups['slackid']][0]
-                text = text.replace(groups['replace'], user.name + ":")
-
-        for pat in (self._re_idnick, self._re_id):
+        for pat in self._slackid_pat:
             while pat.search(text):
                 groups = pat.search(text).groupdict('slackid')
                 user = [u for u in self.users

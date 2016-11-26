@@ -4,9 +4,9 @@ Slack backup
 .. image:: https://travis-ci.org/gryf/slack-backup.svg?branch=master
     :target: https://travis-ci.org/gryf/slack-backup
 
-This simple project which aim is to collect conversations from Slack using its
-API and optionally user account information, and provides convenient way to
-represent as a log.
+This project aim is to collect conversations from Slack using its API and
+optionally user account information, and provides convenient way to represent
+as a log.
 
 Requirements
 ------------
@@ -111,6 +111,33 @@ where:
 The rest of the options (``-d`` and ``-v``) have same meaning as in ``fetch``
 command.
 
+See help for the ``slack-backup`` command for complete list of options.
+
+
+Details
+-------
+
+During first run, database with provided name is generated. For ease of use
+sqlite database is used, although it is easy to switch the engine, since there
+is an ORM (SQLAlchemy) used.
+
+Slack users, channels and messages are mapped to SQLAlchemy models, as well as
+other information, like:
+
+- user profiles
+- channel topic
+- channel purpose
+- message reactions
+- message attachments
+- and files
+
+Channels and users are always synchronized in every run, so every modification
+to the user or channels are overwriting old data. During first run, all messages
+are retrieved for all/selected channels. Every other run will only fetch those
+messages, which are older then newest message in the database - so that we don't
+loose any old messages, which might be automatically removed from Slack servers.
+The drawback of this behaviour is that all past messages which was altered in
+the meantime will not be updated.
 
 License
 -------

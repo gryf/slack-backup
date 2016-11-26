@@ -4,6 +4,9 @@ Slack backup
 .. image:: https://travis-ci.org/gryf/slack-backup.svg?branch=master
     :target: https://travis-ci.org/gryf/slack-backup
 
+.. image:: https://img.shields.io/pypi/v/slack-backup.svg
+    :target: https://pypi.python.org/pypi/slack-backup
+
 This project aim is to collect conversations from Slack using its API and
 optionally user account information, and provides convenient way to represent
 as a log.

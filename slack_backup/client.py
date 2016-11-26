@@ -146,10 +146,17 @@ class Client(object):
         Create message with corresponding possible metadata, like reactions,
         files etc.
         """
-        message = o.Message(data)
-        message.user = self.q(o.User).\
+        user = self.q(o.User).\
             filter(o.User.slackid == data['user']).one()
+
+        if data['type'] == 'message' and not data['text'].strip():
+            logging.info("Skipping message from `%s' since it's empty",
+                         user.name)
+            return
+
+        message = o.Message(data)
         message.channel = channel
+        message.user = user
 
         if data.get('is_starred'):
             message.is_starred = True

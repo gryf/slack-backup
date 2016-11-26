@@ -204,7 +204,6 @@ class TextReporter(Reporter):
         """return formatter for file"""
         groups = self._slackid_pat[0].match(msg.text).groupdict()
         text = msg.text.replace(groups['replace'], '')
-        text = self._filter_slackid(msg.text)
         filename = msg.file.filepath
         if filename:
             filename = os.path.relpath(msg.file.filepath, start=self.out)
@@ -212,9 +211,8 @@ class TextReporter(Reporter):
             filename = msg.file.url
 
         if not filename:
-            logging.warning("There is have a file object, but nothing has "
-                            "found. Name of the file object is `%s'",
-                            msg.file.name)
+            logging.warning("There is a file object, but without filename."
+                            "Name of the file object is `%s'", msg.file.name)
             filename = msg.file.name
 
         text = self._filter_slackid(text)

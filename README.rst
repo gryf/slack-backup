@@ -7,7 +7,7 @@ Slack backup
 .. image:: https://img.shields.io/pypi/v/slack-backup.svg
     :target: https://pypi.python.org/pypi/slack-backup
 
-This project aim is to collect conversations from Slack using its API and
+The project aim is to collect conversations from Slack using its API and
 optionally user account information, and provides convenient way to represent
 as a log.
 

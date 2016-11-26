@@ -356,7 +356,9 @@ class FakeArgs(object):
     team = 'fake_team'
     database = None
     channels = None
-    assets = 'assets'
+
+    def __contains__(self, key):
+        return hasattr(self, key)
 
 
 class TestApiCalls(TestCase):
@@ -377,6 +379,7 @@ class TestApiCalls(TestCase):
         cl = client.Client(FakeArgs())
 
         cl.slack.api_call = MagicMock(return_value=USERS)
+        cl.downloader._download = MagicMock(return_value=None)
         cl.update_users()
 
         cl.slack.api_call = MagicMock(return_value=CHANNELS)
@@ -406,6 +409,7 @@ class TestClient(TestCase):
     def test_update_users(self):
         cl = client.Client(FakeArgs())
         cl.slack.api_call = MagicMock(return_value=USERS)
+        cl.downloader._download = MagicMock(return_value=None)
         cl.update_users()
         users = cl.session.query(o.User).all()
         self.assertEqual(len(users), 4)
@@ -427,6 +431,7 @@ class TestMessage(TestCase):
         self.cl = client.Client(args)
         self.cl.downloader.authorize = MagicMock()
         self.cl.slack.api_call = MagicMock(return_value=USERS)
+        self.cl.downloader._download = MagicMock(return_value=None)
         self.cl.update_users()
 
         self.cl.slack.api_call = MagicMock(return_value=CHANNELS)
@@ -436,6 +441,7 @@ class TestMessage(TestCase):
 
     def test_update_history(self):
 
+        self.cl.downloader._download = MagicMock(return_value=None)
         self.cl.slack.api_call.side_effect = [MSGS, MSG3]
         self.cl.update_history()
         self.assertEqual(len(self.cl.q(o.Message).all()), 5)

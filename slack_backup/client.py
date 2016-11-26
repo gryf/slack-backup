@@ -188,6 +188,7 @@ class Client(object):
                           data['url_private_download'])
             priv_url = data['url_private_download']
             message.file.filepath = self.downloader.download(priv_url, 'file')
+        self.session.add(message.file)
 
     def _att_data(self, message, data):
         """
@@ -229,7 +230,7 @@ class Client(object):
 
     def _update_channel(self, channel, data):
         """Update a channel with provided data"""
-        logging.info("Update channel `%s' information in DB", channel.name)
+        logging.info("Update channel `%s' information in DB", data['name'])
 
         channel.update(data)
         channel.user = self.q(o.User).filter(o.User.slackid ==

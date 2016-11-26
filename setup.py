@@ -7,7 +7,7 @@ from distutils.core import setup
 
 setup(name="slack-backup",
       packages=["slack_backup"],
-      version="0.0",
+      version="0.1",
       description="Make copy of slack converstaions",
       author="Roman Dobosz",
       author_email="gryf73@gmail.com",

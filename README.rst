@@ -14,8 +14,8 @@ as a log.
 Requirements
 ------------
 
-This project is written in Python 2.7, and 3.4+, although version 2.7, which
-should work, wasn't tested as extensively as it should be.
+This project is written in Python 3, 3.4 to be precise, although it may work on
+earlier version of Python3. Sorry no support for Python2.
 
 Other than that, required packages are as follows:
 

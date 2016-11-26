@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-
 from unittest import TestCase
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import MagicMock
+from unittest.mock import MagicMock
 
 from slack_backup import reporters as r
 
@@ -45,7 +40,3 @@ class TestReporter(TestCase):
         text = ('<@U111BBBBB|user2>Praesent vel enim sed eros luctus '
                 'imperdiet.\nMauris neque ante, <@U111DDDDD> placerat at, '
                 'mollis vitae, faucibus quis, <@U111CCCCC>leo. Ut feugiat.')
-
-# Praesent vel enim sed eros luctus imperdiet.  Vivamus urna quam, congue
-# vulputate, convallis non, cursus cursus, risus. Quisque aliquet. Donec
-# vulputate egestas elit. Morbi dictum, sem sit amet aliquam.

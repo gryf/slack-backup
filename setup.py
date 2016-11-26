@@ -2,12 +2,15 @@
 """
 Setup for the slack-backup project
 """
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 
 setup(name="slack-backup",
       packages=["slack_backup"],
-      version="0.2",
+      version="0.3",
       description="Make copy of slack converstaions",
       author="Roman Dobosz",
       author_email="gryf73@gmail.com",

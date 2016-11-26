@@ -1,19 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 Reporters module.
 
 There are several classes for specific format reporting, and also some of the
 slack conversation/convention parsers.
 """
-from __future__ import absolute_import, division, print_function
 import os
 import errno
+import html.parser
 import logging
 import re
-try:
-    from html.parser import HTMLParser
-except ImportError:
-    from HTMLParser import HTMLParser
 
 from slack_backup import objects as o
 from slack_backup import utils
@@ -269,7 +264,7 @@ class TextReporter(Reporter):
 
     def _remove_entities(self, text):
         """replace html entites into appropriate chars"""
-        text = HTMLParser().unescape(text)
+        return html.parser.HTMLParser().unescape(text)
 
     def _filter_slackid(self, text):
         """filter out all of the id from slack"""

@@ -68,7 +68,7 @@ typical session:
    (myenv)user@localhost ~/mylogs $ slack-backup fetch \
    --token xxxx-1111111111-222222222222-333333333333-r4nd0ms7uff \
    --user some@email.address.org --password secret --team myteam \
-   -qqq -d mydatabase.sqlite
+   -qq -d mydatabase.sqlite
 
 where:
 

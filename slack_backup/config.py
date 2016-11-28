@@ -58,7 +58,7 @@ class Config(object):
             path = args.config
 
         locations = [path,
-                     './slack-backup.conf',
+                     './slack-backup.ini',
                      os.path.expandvars('$XDG_CONFIG_HOME/slack-backup.ini'),
                      os.path.expandvars('$HOME/.config/slack-backup.ini')]
 

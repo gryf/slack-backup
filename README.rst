@@ -116,6 +116,60 @@ command.
 
 See help for the ``slack-backup`` command for complete list of options.
 
+Configuration
+-------------
+
+For convenience, you can place all of needed options into configuration file
+(aka .ini), which all options (with their defaults) will look like:
+
+.. code:: ini
+
+   [common]
+   channels =
+   database =
+   quiet = 0
+   verbose = 0
+
+   [generate]
+   output =
+   format = text
+   theme = plain
+
+   [fetch]
+   user =
+   password =
+   team =
+   token =
+
+Note, that you don't have to put every option. To illustrate ``fetch`` example
+from above, here is a corresponding config file:
+
+.. code:: ini
+
+   [common]
+   database = mydatabase.sqlite
+   quiet = 2
+
+   [fetch]
+   user = some@email.address.org
+   password = secret
+   team = myteam
+   token = xxxx-1111111111-222222222222-333333333333-r4nd0ms7uff
+
+Note, that only ``[common]`` and ``[fetch]`` sections are provided, so it is
+enough to invoke ``slack-backup`` command as:
+
+.. code:: shell-session
+
+   (myenv)user@localhost ~/mylogs $ slack-backup fetch
+
+There are couple of places, where configuration file would be searched for, in
+particular order:
+
+* file provided via argument ``-i`` or ``--config``
+* ``slack-backup.ini`` in current directory
+* ``$XDG_CONFIG_HOME/slack-backup.ini``, where ``$XDG_CONFIG_HOME`` usually
+  defaults to ``$HOME/.config``
 
 Details
 -------

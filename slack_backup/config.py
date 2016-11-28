@@ -53,12 +53,7 @@ class Config(object):
 
     def load_config(self, args):
 
-        if not args.config:
-            path = os.path.join(os.path.abspath('.'), 'slack-backup.ini')
-        else:
-            path = args.config
-
-        locations = [path,
+        locations = [args.config,
                      './slack-backup.conf',
                      os.path.expandvars('$XDG_CONFIG_HOME/slack-backup.ini'),
                      os.path.expandvars('$HOME/.config/slack-backup.ini')]

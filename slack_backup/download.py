@@ -55,8 +55,8 @@ class Download(object):
                    'file': self._files}
 
         if filetype == 'file' and not self._authorized:
-            logging.info("There was no (valid) credentials passed, therefore "
-                         "file `%s' cannot be downloaded", url)
+            logging.warning("There was no (valid) credentials passed, "
+                            "therefore file `%s' cannot be downloaded", url)
             return
 
         splitted = url.split('/')

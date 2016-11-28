@@ -83,19 +83,25 @@ class Config(object):
                     val = self.cp.get(section, option, fallback='[]')
                     val = json.loads(val)
                 else:
-                    val = self.cp.get(section, option, fallback='')
+                    val = self.cp.get(section, option, fallback=None)
 
                 self._options[option] = val
 
     def update_args(self, args):
+        if 'parser' not in args:
+            # it doesn't make sense to update args, since no action was
+            # choosen
+            return
 
         # special case, re-set information for verbose/quiet options
-        if args.verbose is not None and self._options['quiet'] is not None:
-            self._options['quiet'] = 0
+        if 'verbose' in args and args.verbose is not None:
             self._options['verbose'] = args.verbose
-        if args.quiet is not None and self._options['verbose'] is not None:
-            self._options['verbose'] = 0
+            if self._options['quiet'] is not None:
+                self._options['quiet'] = 0
+        if 'quiet' in args and args.quiet is not None:
             self._options['quiet'] = args.quiet
+            if self._options['verbose'] is not None:
+                self._options['verbose'] = 0
 
         for sec_id in (args.parser, 'common'):
             for option in self.sections[sec_id]:

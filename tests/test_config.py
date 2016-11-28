@@ -51,13 +51,6 @@ class TestConfig(unittest.TestCase):
         args.config = None
         args.parser = 'fetch'
         args.verbose = 2
-        args.quiet = None
-        args.channels = None
-        args.database = None
-        args.user = None
-        args.password = None
-        args.team = None
-        args.token = None
 
         conf = config.Config()
         conf.update(args)
@@ -66,7 +59,7 @@ class TestConfig(unittest.TestCase):
                                           'verbose': 2,
                                           'quiet': 0,
                                           'channels': [],
-                                          'database': '',
+                                          'database': None,
                                           'user': None,
                                           'password': None,
                                           'team': None,

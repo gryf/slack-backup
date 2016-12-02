@@ -112,6 +112,7 @@ class Client(object):
             channels = all_channels
 
         for channel in channels:
+            logging.info("Getting messages for channel `%s'", channel.name)
             latest = self.q(o.Message).\
                 filter(o.Message.channel == channel).\
                 order_by(o.Message.ts.desc()).first()

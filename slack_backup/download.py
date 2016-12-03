@@ -79,8 +79,10 @@ class Download(object):
         count = 1
 
         while filetype != 'avatar' and os.path.exists(path):
-            base, ext = os.path.splitext(path)
-            path = base + "%0.3d" % count + ext
+            if count == 1:
+                base, ext = os.path.splitext(path)
+            path = base + ".%0.3d" % count + ext
+            count += 1
 
         return path
 

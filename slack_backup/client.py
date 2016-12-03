@@ -256,7 +256,7 @@ class Client(object):
         if not database:
             return 'assets'
 
-        path = os.path.dirname(os.path.abspath(database))
+        path = os.path.dirname(database)
         return os.path.join(path, 'assets')
 
     def _channels_list(self):

@@ -10,7 +10,7 @@ except ImportError:
 
 setup(name="slack-backup",
       packages=["slack_backup"],
-      version="0.4.4",
+      version="0.4.5",
       description="Make copy of slack converstaions",
       author="Roman Dobosz",
       author_email="gryf73@gmail.com",

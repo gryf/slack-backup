@@ -324,7 +324,10 @@ MSGS = {'messages': [{"type": "message",
                               "<https://esm64.slack.com/files/name2/F3405RRB5/"
                               "screenshot.png|Screenshot.png>",
                       "ts": "1478107371.000052",
-                      "upload": True}],
+                      "upload": True},
+                     {'type': 'something else',
+                      'ts': '1502003415232.000001',
+                      "wibblr": True}],
         "ok": True,
         "latest": "1479501075.000020",
         "has_more": True}
@@ -389,7 +392,7 @@ class TestApiCalls(TestCase):
                                          "C00000001").one()
 
         msg, ts = cl._channels_history(channel, 0)
-        self.assertEqual(len(msg), 5)
+        self.assertEqual(len(msg), 6)
         self.assertEqual(ts, '1479501074.000032')
 
         msg, ts = cl._channels_history(channel, ts)

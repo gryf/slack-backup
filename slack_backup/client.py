@@ -147,6 +147,10 @@ class Client(object):
         Create message with corresponding possible metadata, like reactions,
         files etc.
         """
+        if data['type'] != 'message':
+            logging.info("Skipping message of type `%s'.", data['type'])
+            return
+
         try:
             user = self.q(o.User).\
                 filter(o.User.slackid == data['user']).one()
@@ -154,7 +158,7 @@ class Client(object):
             user = self.q(o.User).\
                     filter(o.User.slackid == data['comment']['user']).one()
 
-        if data['type'] == 'message' and not data['text'].strip():
+        if not data['text'].strip():
             logging.info("Skipping message from `%s' since it's empty",
                          user.name)
             return

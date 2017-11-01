@@ -2,12 +2,42 @@
 Module for download files, store them in local filesystem and convert the URLs
 to local ones, so that sophisticated writers can make a use of it
 """
+import functools
 import logging
 import os
 
 import requests
 
 from slack_backup import utils
+
+
+def retry(count):
+    """
+    Decorator for a case, when there is some network hiccup, or slack servers
+    are too busy to respond or on connection timeout. Parameter count says how
+    many times it should try to perform request.
+    """
+    def wrapper(func):
+        @functools.wraps(func)
+        def inner(obj, *args, **kwargs):
+            counter = count
+
+            while counter:
+                counter -= 1
+                try:
+                    return func(obj, *args, **kwargs)
+                except requests.exceptions.RequestException as exc:
+                    if not counter:
+                        logging.error('Request for %s failed. Reported '
+                                      'reason: %s', args[0], exc.__doc__)
+                        raise
+                    logging.warning('Request for %s failed. Reported '
+                                    'reason: %s. Retrying.', args[0],
+                                    exc.__doc__)
+                    # Renew the session before retry
+                    obj.authorize()
+        return inner
+    return wrapper
 
 
 class NotAuthorizedError(requests.HTTPError):
@@ -18,7 +48,7 @@ class Download(object):
     """Download class for taking care of Slack internally uploaded files"""
 
     def __init__(self, args, assets_dir):
-        self.session = requests.session()
+        self.session = None
         self.team = args.team
         self.user = args.user
         self.password = args.password
@@ -86,15 +116,11 @@ class Download(object):
 
         return path
 
+    @retry(3)
     def _download(self, url, local):
         """Download file"""
 
-        try:
-            res = self.session.get(url, stream=True)
-        except requests.exceptions.RequestException as exc:
-            logging.error('Request for %s failed. Reported reason: %s',
-                          url, exc.__doc__)
-            raise
+        res = self.session.get(url, stream=True)
 
         with open(local, 'wb') as fobj:
             for chunk in res.iter_content(chunk_size=5120):
@@ -106,7 +132,9 @@ class Download(object):
         """
         Authenticate and gather session for Slack
         """
+        self.session = requests.session()  # new session
         res = self.session.get('https://%s.slack.com/' % self.team)
+
         if not all((self.team, self.password, self.user)):
             logging.warning('There is neither username, password or team name'
                             ' provided. Downloading will not be performed.')
@@ -114,7 +142,7 @@ class Download(object):
 
         crumb = ''
         for line in res.text.split('\n'):
-            if 'crumb' in line:
+            if 'crumb' in line and 'value' in line:
                 crumb = line.split('value=')[1].split('"')[1]
                 break
         else:

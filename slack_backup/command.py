@@ -3,6 +3,7 @@ Create backup for certain date for specified channel in slack
 """
 import argparse
 import logging
+import platform
 
 from slack_backup import client
 from slack_backup import config
@@ -10,6 +11,28 @@ from slack_backup import config
 
 def setup_logger(args):
     """Setup logger format and level"""
+
+    if platform.system() != "Windows":
+        # hack to have colors in terminal
+        logging.addLevelName(logging.DEBUG,
+                             "\033[1;30m%s\033[1;0m" %
+                             logging.getLevelName(logging.DEBUG))
+
+        logging.addLevelName(logging.INFO,
+                             "\033[1;32m%s\033[1;0m" %
+                             logging.getLevelName(logging.INFO))
+
+        logging.addLevelName(logging.WARNING,
+                             "\033[1;33m%s\033[1;0m" %
+                             logging.getLevelName(logging.WARNING))
+
+        logging.addLevelName(logging.ERROR,
+                             "\033[1;31m%s\033[1;0m" %
+                             logging.getLevelName(logging.ERROR))
+
+        logging.addLevelName(logging.CRITICAL,
+                             "\033[7;31m%s\033[1;0m" %
+                             logging.getLevelName(logging.CRITICAL))
 
     level = logging.WARNING
 

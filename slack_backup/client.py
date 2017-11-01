@@ -3,6 +3,7 @@ Create backup for certain date for specified channel in slack
 """
 from datetime import datetime
 import getpass
+import json
 import logging
 import os
 
@@ -150,6 +151,8 @@ class Client(object):
         if data['type'] != 'message':
             logging.info("Skipping message of type `%s'.", data['type'])
             return
+
+        logging.debug('Message data: %s', json.dumps(data))
 
         try:
             user = self.q(o.User).\

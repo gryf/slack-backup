@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import MagicMock
+from unittest import mock
 
 from slack_backup import client
 from slack_backup import objects as o
@@ -365,27 +365,27 @@ class TestApiCalls(TestCase):
 
     def test_channels_list(self):
         cl = client.Client(FakeArgs())
-        cl.slack.api_call = MagicMock(return_value=CHANNELS)
+        cl.slack.api_call = mock.MagicMock(return_value=CHANNELS)
         channels = cl._channels_list()
         self.assertListEqual(CHANNELS['channels'], channels)
 
     def test_users_list(self):
         cl = client.Client(FakeArgs())
-        cl.slack.api_call = MagicMock(return_value=USERS)
+        cl.slack.api_call = mock.MagicMock(return_value=USERS)
         users = cl._users_list()
         self.assertListEqual(USERS['members'], users)
 
     def test_channels_history(self):
         cl = client.Client(FakeArgs())
 
-        cl.slack.api_call = MagicMock(return_value=USERS)
-        cl.downloader._download = MagicMock(return_value=None)
+        cl.slack.api_call = mock.MagicMock(return_value=USERS)
+        cl.downloader._download = mock.MagicMock(return_value=None)
         cl.update_users()
 
-        cl.slack.api_call = MagicMock(return_value=CHANNELS)
+        cl.slack.api_call = mock.MagicMock(return_value=CHANNELS)
         cl.update_channels()
 
-        cl.slack.api_call = MagicMock()
+        cl.slack.api_call = mock.MagicMock()
         cl.slack.api_call.side_effect = [MSGS, MSG2, MSG3]
 
         channel = cl.q(o.Channel).filter(o.Channel.slackid ==
@@ -408,8 +408,8 @@ class TestClient(TestCase):
 
     def test_update_users(self):
         cl = client.Client(FakeArgs())
-        cl.slack.api_call = MagicMock(return_value=USERS)
-        cl.downloader._download = MagicMock(return_value=None)
+        cl.slack.api_call = mock.MagicMock(return_value=USERS)
+        cl.downloader._download = mock.MagicMock(return_value=None)
         cl.update_users()
         users = cl.session.query(o.User).all()
         self.assertEqual(len(users), 4)
@@ -429,19 +429,22 @@ class TestMessage(TestCase):
         args.channels = ['general']
 
         self.cl = client.Client(args)
-        self.cl.downloader.authorize = MagicMock()
-        self.cl.slack.api_call = MagicMock(return_value=USERS)
-        self.cl.downloader._download = MagicMock(return_value=None)
+        self.cl.downloader.authorize = mock.MagicMock()
+        self.cl.slack.api_call = mock.MagicMock(return_value=USERS)
+        self.cl.downloader._download = mock.MagicMock(return_value=None)
         self.cl.update_users()
 
-        self.cl.slack.api_call = MagicMock(return_value=CHANNELS)
+        self.cl.slack.api_call = mock.MagicMock(return_value=CHANNELS)
         self.cl.update_channels()
 
-        self.cl.slack.api_call = MagicMock()
+        self.cl.slack.api_call = mock.MagicMock()
 
-    def test_update_history(self):
+    @mock.patch('slack_backup.download.Download.download')
+    def test_update_history(self, download):
 
-        self.cl.downloader._download = MagicMock(return_value=None)
+        download.return_value = 'foo'
+
+        self.cl.downloader._download = mock.MagicMock(return_value=None)
         self.cl.slack.api_call.side_effect = [MSGS, MSG3]
         self.cl.update_history()
         self.assertEqual(len(self.cl.q(o.Message).all()), 5)

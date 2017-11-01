@@ -5,6 +5,7 @@ to local ones, so that sophisticated writers can make a use of it
 import functools
 import logging
 import os
+import shutil
 
 import requests
 
@@ -67,10 +68,26 @@ class Download(object):
         if not self._hier_created:
             self._create_assets_dir()
 
-        fname = self.prepare_filepath(url, filetype)
+        filepath = self.get_filepath(url, filetype)
+        temp_file = utils.get_temp_name()
 
-        self._download(url, fname)
-        return fname
+        self._download(url, temp_file)
+
+        if filepath and os.path.exists(filepath) and filetype != 'avatar':
+            if not utils.same_files(filepath, temp_file):
+                logging.warning("File `%s' already exist, renamed to `%s'",
+                                filepath,
+                                self.calculate_new_filename(filepath,
+                                                            filetype))
+                filepath = self.calculate_new_filename(filepath, filetype)
+                shutil.move(temp_file, filepath)
+            else:
+                logging.debug("File `%s' already exist, skipping", filepath)
+                os.unlink(filepath)
+        else:
+            shutil.move(temp_file, filepath)
+
+        return filepath
 
     def _create_assets_dir(self):
         for path in (self._files, self._images):
@@ -78,8 +95,8 @@ class Download(object):
 
         self._hier_created = True
 
-    def prepare_filepath(self, url, filetype):
-        """Prepare directory where to download file into"""
+    def get_filepath(self, url, filetype):
+        """Get full path and filename for the file"""
 
         typemap = {'avatar': self._images,
                    'file': self._files}
@@ -91,7 +108,8 @@ class Download(object):
 
         splitted = url.split('/')
 
-        if len(splitted) == 7 and 'slack.com' in splitted[2]:
+        if len(splitted) == 7 and ('slack.com' in splitted[2] or
+                                   'slack-edge.com' in splitted[2]):
             part = url.split('/')[-3]
             fname = url.split('/')[-1]
         else:
@@ -105,7 +123,9 @@ class Download(object):
             utils.makedirs(os.path.join(path, part))
             path = os.path.join(path, part)
 
-        path = os.path.join(path, fname)
+        return os.path.join(path, fname)
+
+    def calculate_new_filename(self, path, filetype):
         count = 1
 
         while filetype != 'avatar' and os.path.exists(path):

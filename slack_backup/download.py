@@ -175,8 +175,7 @@ class Download(object):
                                  'password': self.password,
                                  'signin': 1})
         self.cookies = requests.utils.dict_from_cookiejar(self.session.cookies)
-        if not ('a' in self.cookies and 'b' in self.cookies and
-                ('a-' + self.cookies['a']) in self.cookies):
+        if not ('d' in self.cookies and 'd-s' in self.cookies):
             logging.error('Failed to login into Slack app')
         else:
             self._authorized = True

@@ -25,7 +25,6 @@ class Client(object):
     querying data fetched out using Slack API.
     """
     RAW = '%Y%m%d%H%M%S_{name}.json'
-
     def __init__(self, args):
         if 'token' in args:
             self.slack = slackclient.SlackClient(args.token)
@@ -237,6 +236,12 @@ class Client(object):
         logging.debug('Message data: %s', json.dumps(data))
 
         user = self._get_user(data)
+        try:
+            user = self.q(o.User).\
+                filter(o.User.slackid == data['user']).one()
+        except KeyError:
+            user = self.q(o.User).\
+                    filter(o.User.slackid == data['comment']['user']).one()
 
         if not any((data.get('attachments'), data['text'].strip(),
                     data.get('files'))):

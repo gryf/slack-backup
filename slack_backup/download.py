@@ -85,7 +85,10 @@ class Download(object):
                 logging.debug("File `%s' already exist, skipping", filepath)
                 os.unlink(filepath)
         else:
+            if temp_file == ".gif":
+                temp_file = "generic.gif"
             shutil.move(temp_file, filepath)
+
 
         return filepath
 
@@ -104,7 +107,6 @@ class Download(object):
         if filetype == 'file' and not self._authorized:
             logging.warning("There was no (valid) credentials passed, "
                             "therefore file `%s' cannot be downloaded", url)
-            return
 
         splitted = url.split('/')
 

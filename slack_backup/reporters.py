@@ -142,6 +142,7 @@ class NoneReporter(Reporter):
 class TextReporter(Reporter):
     """Text aka IRC reporter"""
     ext = '.log'
+    tpl = '{date} {nick:>{max_len}} {separator} {msg}\n'
 
     def __init__(self, args, query):
         super(TextReporter, self).__init__(args, query)
@@ -191,56 +192,54 @@ class TextReporter(Reporter):
 
     def _msg_join(self, msg, text):
         """return formatter for join"""
-        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': text,
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
-                'nick': self._get_symbol('join')}
-        return '{date} {nick:>{max_len}} {separator} {msg}\n'.format(**data)
+                'nick': self._get_symbol('join'),
+                'tpl': '{date} {nick:>{max_len}} {separator} {msg}\n'}
 
     def _msg_leave(self, msg, text):
         """return formatter for leave"""
-        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': text,
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
-                'nick': self._get_symbol('leave')}
-        return '{date} {nick:>{max_len}} {separator} {msg}\n'.format(**data)
+                'nick': self._get_symbol('leave'),
+                'tpl': '{date} {nick:>{max_len}} {separator} {msg}\n'}
 
     def _msg_topic(self, msg, text):
         """return formatter for set topic"""
-        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': text,
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
-                'char': self._get_symbol('topic')}
-        return '{date} {char:>{max_len}} {separator} {msg}\n'.format(**data)
+                'char': self._get_symbol('topic'),
+                'tpl': '{date} {char:>{max_len}} {separator} {msg}\n'}
 
     def _msg_me(self, msg, text):
         """return formatter for /me"""
-        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': text,
                 'max_len': self._max_len,
                 'nick': msg.user.name,
                 'separator': self._get_symbol('separator'),
-                'char': self._get_symbol('me')}
-        return '{date} {char:>{max_len}} {separator} {nick} {msg}\n'.\
-            format(**data)
+                'char': self._get_symbol('me'),
+                'tpl': '{date} {char:>{max_len}} {separator} {nick} {msg}\n'}
 
     def _msg_file(self, msg, text):
         """return formatter for file"""
         fpath = os.path.abspath(msg.file.filepath)
-
-        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': self.url_pat.sub('(file://' + fpath + ') ' +
                                         msg.file.title, text),
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
                 'filename': fpath,
                 'nick': msg.user.name,
-                'char': self._get_symbol('file')}
-        return ('{date} {char:>{max_len}} {separator} {nick} '
-                'shared file "{filename}"{msg}\n'.format(**data))
+                'char': self._get_symbol('file'),
+                'tpl': '{date} {char:>{max_len}} {separator} {nick} '
+                       'shared file "{filename}"{msg}\n'}
 
     def _msg(self, msg, text):
         """return formatter for all other message types"""
@@ -250,25 +249,22 @@ class TextReporter(Reporter):
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
                 'nick': msg.user.name}
-        result = '{date} {nick:>{max_len}} {separator} {msg}\n'.format(**data)
+        result = ''
 
         if msg.attachments:
             for att in msg.attachments:
                 if att.title:
-                    att_text = "\n" + att.title + '\n'
+                    att_text = att.title + '\n'
                 else:
-                    att_text = "\n" + self._fix_newlines(att.fallback) + '\n'
+                    att_text = self._fix_newlines(att.fallback) + '\n'
 
                 if att.text:
                     att_text += att.text
 
-                att_text = self._fix_newlines(att_text)
-                # remove first newline
-                att_text = att_text[1:]
-
                 result += att_text + '\n'
 
-        return result
+        data['msg'] += result.strip()
+        return data
 
     def _remove_entities(self, text):
         """replace html entites into appropriate chars"""

@@ -177,77 +177,52 @@ class TextReporter(Reporter):
             if len(user_name) > self._max_len:
                 self._max_len = len(user_name)
 
-    def _format_message(self, msg):
+    def _process_message(self, msg):
         """
         Check what kind of message we are dealing with and do appropriate
         formatting
         """
-        msg_txt = self._filter_slackid(msg.text)
-        msg_txt = self._fix_newlines(msg_txt)
-        for emoticon in self.emoji:
-            msg_txt = msg_txt.replace(emoticon, self.emoji[emoticon])
-        formatter = self.types.get(msg.type, self._msg)
+        data = super(TextReporter, self)._process_message(msg)
+        data['msg'] = self._filter_slackid(data['msg'])
+        data['msg'] = self._fix_newlines(data['msg'])
+        data['msg'] = self._remove_entities(data['msg'])
+        data.update({'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                     'max_len': self._max_len,
+                     'separator': self._get_symbol('separator'),
+                     'tpl': self.tpl})
+        return data
 
-        return formatter(msg, msg_txt)
-
-    def _msg_join(self, msg, text):
+    def _msg_join(self, msg):
         """return formatter for join"""
-        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': text,
-                'max_len': self._max_len,
-                'separator': self._get_symbol('separator'),
-                'nick': self._get_symbol('join'),
-                'tpl': '{date} {nick:>{max_len}} {separator} {msg}\n'}
+        return {'msg': msg.text,
+                'nick': self._get_symbol('join')}
 
-    def _msg_leave(self, msg, text):
+    def _msg_leave(self, msg):
         """return formatter for leave"""
-        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': text,
-                'max_len': self._max_len,
-                'separator': self._get_symbol('separator'),
-                'nick': self._get_symbol('leave'),
-                'tpl': '{date} {nick:>{max_len}} {separator} {msg}\n'}
+        return {'msg': msg.text,
+                'nick': self._get_symbol('leave')}
 
-    def _msg_topic(self, msg, text):
+    def _msg_topic(self, msg):
         """return formatter for set topic"""
-        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': text,
-                'max_len': self._max_len,
-                'separator': self._get_symbol('separator'),
-                'char': self._get_symbol('topic'),
-                'tpl': '{date} {char:>{max_len}} {separator} {msg}\n'}
+        return {'msg': msg.text,
+                'nick': self._get_symbol('topic')}
 
-    def _msg_me(self, msg, text):
+    def _msg_me(self, msg):
         """return formatter for /me"""
-        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': text,
-                'max_len': self._max_len,
-                'nick': msg.user.name,
-                'separator': self._get_symbol('separator'),
-                'char': self._get_symbol('me'),
-                'tpl': '{date} {char:>{max_len}} {separator} {nick} {msg}\n'}
+        return {'msg': msg.text,
+                'nick': self._get_symbol('me')}
 
-    def _msg_file(self, msg, text):
+    def _msg_file(self, msg):
         """return formatter for file"""
         fpath = os.path.abspath(msg.file.filepath)
-        return {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': self.url_pat.sub('(file://' + fpath + ') ' +
-                                        msg.file.title, text),
-                'max_len': self._max_len,
-                'separator': self._get_symbol('separator'),
-                'filename': fpath,
-                'nick': msg.user.name,
-                'char': self._get_symbol('file'),
-                'tpl': '{date} {char:>{max_len}} {separator} {nick} '
-                       'shared file "{filename}"{msg}\n'}
+        return {'msg': self.url_pat.sub('(file://' + fpath + ') ' +
+                                        msg.file.title, msg.text),
+                'nick': self._get_symbol('file')}
 
-    def _msg(self, msg, text):
+    def _msg(self, msg):
         """return formatter for all other message types"""
 
-        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': text,
-                'max_len': self._max_len,
-                'separator': self._get_symbol('separator'),
+        data = {'msg': msg.text,
                 'nick': msg.user.name}
         result = ''
 

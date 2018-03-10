@@ -70,9 +70,12 @@ class Reporter(object):
         """Return relative log file name """
         return os.path.join(self.out, name + self.ext)
 
-    def write_msg(self, message, log):
+    def write_msg(self, messages, log):
         """Write message to file"""
-        raise NotImplementedError()
+        with open(log, "a") as fobj:
+            for message in messages:
+                data = self._process_message(message)
+                fobj.write(data['tpl'].format(**data))
 
     def _get_symbol(self, item):
         """Return appropriate item depending on the selected theme"""
@@ -145,11 +148,10 @@ class TextReporter(Reporter):
         utils.makedirs(self.out)
         self._max_len = 0
 
-        return
-
     def generate(self):
         """Generate raport"""
         for channel in self.channels:
+            messages = []
             log_path = self.get_log_path(channel.name)
             self._set_max_len(channel)
             try:
@@ -160,12 +162,9 @@ class TextReporter(Reporter):
             for message in self.q(o.Message).\
                     filter(o.Message.channel == channel).\
                     order_by(o.Message.ts).all():
-                self.write_msg(message, log_path)
+                messages.append(message)
 
-    def write_msg(self, message, log):
-        """Write message to file"""
-        with open(log, "a") as fobj:
-            fobj.write(self._format_message(message))
+            self.write_msg(messages, log_path)
 
     def _set_max_len(self, channel):
         """calculate max_len for sepcified channel"""

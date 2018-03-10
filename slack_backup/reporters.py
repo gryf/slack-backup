@@ -18,6 +18,18 @@ from slack_backup import emoji
 class Reporter(object):
     """Base reporter class"""
     ext = ''
+    symbols = {'plain': {'join': '->',
+                         'leave': '<-',
+                         'me': '*',
+                         'file': '-',
+                         'topic': '+',
+                         'separator': '|'},
+               'unicode': {'join': '⮊',
+                           'leave': '⮈',
+                           'me': '🟊',
+                           'file': '📂',
+                           'topic': '🟅',
+                           'separator': '│'}}
     url_pat = re.compile(r'(?P<replace><http[^>]+>)')
     slackid_pat = re.compile(r'(?P<replace><@'
                              '(?P<slackid>U[A-Z,0-9]+)(\|[^>]+)?[^>]*>)')
@@ -31,26 +43,28 @@ class Reporter(object):
                       "channel_topic": self._msg_topic,
                       "file_share": self._msg_file,
                       "me_message": self._msg_me}
-        self.symbols = {'plain': {'join': '->',
-                                  'leave': '<-',
-                                  'me': '*',
-                                  'file': '-',
-                                  'topic': '+',
-                                  'separator': '|'},
-                        'unicode': {'join': '⮊',
-                                    'leave': '⮈',
-                                    'me': '🟊',
-                                    'file': '📂',
-                                    'topic': '🟅',
-                                    'separator': '│'}}
+
         self.emoji = emoji.EMOJI.get(args.theme, {})
 
         self.channels = self._get_channels(args.channels)
         self.users = self.q(o.User).all()
 
     def generate(self):
-        """Generate raport it's a dummmy one - for use with none reporter"""
-        return
+        """Generate raport for each channel"""
+        for channel in self.channels:
+            messages = []
+            log_path = self.get_log_path(channel.name)
+            self._set_max_len(channel)
+            try:
+                os.unlink(log_path)
+            except IOError as err:
+                if err.errno != errno.ENOENT:
+                    raise
+            for message in self.q(o.Message).\
+                    filter(o.Message.channel == channel).\
+                    order_by(o.Message.ts).all():
+                messages.append(message)
+            self.write_msg(messages, log_path)
 
     def get_log_path(self, name):
         """Return relative log file name """
@@ -112,6 +126,14 @@ class Reporter(object):
             text = text.replace(match['replace'], user.name)
 
         return text
+
+
+class NoneReporter(Reporter):
+    """Dummy reporter used for fallback"""
+
+    def generate(self):
+        """Generate raport it's a dummmy one - for use with none reporter"""
+        return
 
 
 class TextReporter(Reporter):
@@ -210,7 +232,6 @@ class TextReporter(Reporter):
         """return formatter for file"""
         fpath = os.path.abspath(msg.file.filepath)
 
-
         data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
                 'msg': self.url_pat.sub('(file://' + fpath + ') ' +
                                         msg.file.title, text),
@@ -254,7 +275,6 @@ class TextReporter(Reporter):
         """replace html entites into appropriate chars"""
         return html.parser.HTMLParser().unescape(text)
 
-
     def _fix_newlines(self, text):
         """Shift text with new lines to the right with separator"""
         shift = 19  # length of the date
@@ -269,7 +289,7 @@ def get_reporter(args, query):
     """Return object of right reporter class"""
     reporters = {'text': TextReporter}
 
-    klass = reporters.get(args.format, Reporter)
+    klass = reporters.get(args.format, NoneReporter)
     if klass.__name__ == 'Reporter':
         logging.warning('None, or wrong (%s) formatter selected, falling to'
                         ' None Reporter', args.format)

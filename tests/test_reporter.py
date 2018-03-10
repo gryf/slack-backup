@@ -1,7 +1,7 @@
-from unittest import TestCase
-from unittest.mock import MagicMock
+import unittest
+from unittest import mock
 
-from slack_backup import reporters as r
+from slack_backup import reporters
 
 
 class FakeUser(object):
@@ -10,33 +10,46 @@ class FakeUser(object):
         self.name = name
 
 
-class TestReporter(TestCase):
+class TestReporter(unittest.TestCase):
 
     def setUp(self):
 
-        users = [FakeUser('U111AAAAA', 'user1'),
-                 FakeUser('U111BBBBB', 'user2'),
-                 FakeUser('U111CCCCC', 'funky_username1'),
-                 FakeUser('U111DDDDD', 'user-name°')]
-
-        args = MagicMock()
+        args = mock.MagicMock()
         args.output = 'logs'
-        query1 = MagicMock()
-        query1.all = MagicMock(return_value=users)
-        query = MagicMock(return_value=query1)
 
-        self.reporter = r.TextReporter(args, query)
+        self.one = mock.MagicMock()
+        query2 = mock.MagicMock()
+        query2.one = self.one
+        query1 = mock.MagicMock()
+        query1.filter = mock.MagicMock(return_value=query2)
+        query = mock.MagicMock(return_value=query1)
 
-    def test_regexp(self):
+        self.reporter = reporters.TextReporter(args, query)
+
+    def test_regexp1(self):
+        self.one.return_value = FakeUser('U111AAAAA', 'user1')
         text = 'Cras vestibulum <@U111AAAAA|user1> erat ultrices neque.'
+
         self.assertEqual(self.reporter._filter_slackid(text),
                          'Cras vestibulum user1 erat ultrices neque.')
 
+    def test_regexp2(self):
+        self.one.side_effect = [FakeUser('U111AAAAA', 'user1'),
+                                FakeUser('U111AAAAA', 'user1')]
         text = ('Cras vestibulum <@U111AAAAA|user1> erat ultrices '
                 '<@U111AAAAA|user1> neque.')
         self.assertEqual(self.reporter._filter_slackid(text),
                          'Cras vestibulum user1 erat ultrices user1 neque.')
 
-        text = ('<@U111BBBBB|user2>Praesent vel enim sed eros luctus '
+    def test_regexp3(self):
+        self.one.side_effect = [FakeUser('U111BBBBB', 'user2'),
+                                FakeUser('U111DDDDD', 'user-name°'),
+                                FakeUser('U111CCCCC', 'funky_username1')]
+        text = ('<@U111BBBBB|user2> Praesent vel enim sed eros luctus '
                 'imperdiet.\nMauris neque ante, <@U111DDDDD> placerat at, '
-                'mollis vitae, faucibus quis, <@U111CCCCC>leo. Ut feugiat.')
+                'mollis vitae, faucibus quis, <@U111CCCCC> leo. Ut feugiat.')
+        self.assertEqual(self.reporter._filter_slackid(text),
+                         'user2 Praesent vel enim sed eros luctus '
+                         'imperdiet.\nMauris neque ante, user-name° placerat '
+                         'at, mollis vitae, faucibus quis, funky_username1 '
+                         'leo. Ut feugiat.')

@@ -18,6 +18,9 @@ from slack_backup import emoji
 class Reporter(object):
     """Base reporter class"""
     ext = ''
+    url_pat = re.compile(r'(?P<replace><http[^>]+>)')
+    slackid_pat = re.compile(r'(?P<replace><@'
+                             '(?P<slackid>U[A-Z,0-9]+)(\|[^>]+)?[^>]*>)')
 
     def __init__(self, args, query):
         self.out = args.output
@@ -44,14 +47,6 @@ class Reporter(object):
 
         self.channels = self._get_channels(args.channels)
         self.users = self.q(o.User).all()
-        self._slackid_pat = [re.compile(r'^(?P<replace>'
-                                        r'<@(?P<slackid>U[A-Z,0-9]+)\|.+>)'),
-                             re.compile('^(?P<replace>'
-                                        '<@(?P<slackid>U[A-Z,0-9]+)>)'),
-                             re.compile(r'.*(?P<replace>'
-                                        r'<@(?P<slackid>U[A-Z,0-9]+)\|.+>)'),
-                             re.compile('.*(?P<replace><@(?P<slackid>'
-                                        'U[A-Z,0-9]+)>)')]
 
     def generate(self):
         """Generate raport it's a dummmy one - for use with none reporter"""
@@ -105,7 +100,18 @@ class Reporter(object):
 
     def _filter_slackid(self, text):
         """filter out all of the id from slack"""
-        return
+        match = True
+        while match:
+            match = self.slackid_pat.search(text)
+            if not match:
+                return text
+
+            match = match.groupdict()
+            user = self.q(o.User).filter(o.User.slackid ==
+                                         match['slackid']).one()
+            text = text.replace(match['replace'], user.name)
+
+        return text
 
 
 class TextReporter(Reporter):
@@ -202,31 +208,15 @@ class TextReporter(Reporter):
 
     def _msg_file(self, msg, text):
         """return formatter for file"""
-        groups = self._slackid_pat[0].match(msg.text).groupdict()
-        text = msg.text.replace(groups['replace'], '')
-        filename = msg.file.filepath
-        if filename:
-            filename = os.path.relpath(msg.file.filepath, start=self.out)
-        else:
-            filename = msg.file.url
+        fpath = os.path.abspath(msg.file.filepath)
 
-        if not filename:
-            logging.warning("There is a file object, but without filename."
-                            "Name of the file object is `%s'", msg.file.name)
-            filename = msg.file.name
-
-        text = self._filter_slackid(text)
-        text = self._remove_entities(text)
-        text = self._fix_newlines(text)
-
-        for emoticon in self.emoji:
-            text = text.replace(emoticon, self.emoji[emoticon])
 
         data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': text,
+                'msg': self.url_pat.sub('(file://' + fpath + ') ' +
+                                        msg.file.title, text),
                 'max_len': self._max_len,
                 'separator': self._get_symbol('separator'),
-                'filename': filename,
+                'filename': fpath,
                 'nick': msg.user.name,
                 'char': self._get_symbol('file')}
         return ('{date} {char:>{max_len}} {separator} {nick} '
@@ -264,16 +254,6 @@ class TextReporter(Reporter):
         """replace html entites into appropriate chars"""
         return html.parser.HTMLParser().unescape(text)
 
-    def _filter_slackid(self, text):
-        """filter out all of the id from slack"""
-        for pat in self._slackid_pat:
-            while pat.search(text):
-                groups = pat.search(text).groupdict('slackid')
-                user = [u for u in self.users
-                        if u.slackid == groups['slackid']][0]
-                text = text.replace(groups['replace'], user.name)
-
-        return text
 
     def _fix_newlines(self, text):
         """Shift text with new lines to the right with separator"""

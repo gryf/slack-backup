@@ -94,6 +94,7 @@ class Reporter(object):
         for channel in all_channels:
             if channel.name in selected_channels:
                 result.append(channel)
+        return result
 
     def _msg_join(self, msg, text):
         """return formatter for join"""

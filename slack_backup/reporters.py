@@ -260,9 +260,170 @@ class TextReporter(Reporter):
                             self._get_symbol('separator') + ' ')
 
 
+class StaticHtmlReporter(Reporter):
+    """Text-like, but with browsable, clickable links"""
+    ext = '.html'
+    index_templ = """<!DOCTYPE html>
+        <html>
+        <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>%(title)s</title>
+        </head>
+        <body>
+        <div id="container">
+        %(msgs)s
+        </div>
+        </body>
+        </html>
+    """
+    index_list = """
+        <ul>
+            %s
+        </ul>
+    """
+    msg_head = """<!DOCTYPE html>
+        <html>
+        <head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+        <title>Bla</title>
+        <style>
+        * {
+            font-family: sans-serif;
+        }
+        .log {
+            width: 100%;
+        }
+        .log tr:nth-child(even) {
+            background-color: #efefef;
+        }
+        .nick {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .date {
+            white-space: nowrap;
+        }
+        td {
+            padding: 2px;
+        }
+        </style>
+        </head>
+        <body>
+        <div id="container">
+        <table class="log">
+    """
+    msg_foot = """
+        </table>
+        </div>
+        </body>
+        </html>
+    """
+    msg_line = """
+            <tr>
+                <td class="date">{date}</td>
+                <td class="nick">{nick}</td>
+                <td>{msg}</td>
+            </tr>
+        """
+
+    def __init__(self, args, query):
+        super(StaticHtmlReporter, self).__init__(args, query)
+        utils.makedirs(self.out)
+        self._max_len = 0
+
+    def generate(self):
+        """Generate raport"""
+        super(StaticHtmlReporter, self).generate()
+
+        with open(os.path.join(self.out, "index.html"), "w") as fobj:
+            content = {'title': 'index',
+                       'msgs': self.index_list % self._get_index_list()}
+            fobj.write(self.index_templ % content)
+
+    def write_msg(self, messages, log):
+        """Write message to file"""
+        with open(log, "w") as fobj:
+            fobj.write(self.msg_head)
+
+        super(StaticHtmlReporter, self).write_msg(messages, log)
+
+        with open(log, "a") as fobj:
+            fobj.write(self.msg_foot)
+
+    def _get_index_list(self):
+        _list = []
+        for channel in sorted([c.name for c in self.channels]):
+            _list.append('<li><a href="%s">%s</a></li>' % (channel + '.html',
+                                                           channel))
+        return '\n'.join(_list)
+
+    def _process_message(self, msg):
+        """
+        Check what kind of message we are dealing with and do appropriate
+        formatting
+        """
+        data = super(StaticHtmlReporter, self)._process_message(msg)
+        data['msg'] = self._filter_slackid(data['msg'])
+        data.update({'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                     'tpl': self.msg_line})
+        return data
+
+    def _msg_file(self, msg):
+        """return data for file"""
+        fpath = os.path.abspath(msg.file.filepath)
+        _, ext = os.path.splitext(fpath)
+        if ext.lower() in ('.png', '.jpg', '.jpeg', '.gif'):
+            url = ('<img src="file://' + fpath +
+                   '" height="300" alt="' + msg.file.title +
+                   '">')
+        else:
+            url = ('<a href="file://' + fpath + '">' + msg.file.title + '</a>')
+
+        return {'msg': self.url_pat.sub(url, msg.text),
+                'nick': self._get_symbol('file')}
+
+    def _msg(self, msg):
+        """return processor for all other message types"""
+
+        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                'msg': msg.text,
+                'nick': msg.user.name}
+
+        attachement_msg = []
+
+        if msg.attachments:
+            for att in msg.attachments:
+                if att.title:
+                    att_text = att.title
+                else:
+                    att_text = att.fallback
+
+                if att.text:
+                    att_text += '<br>' + att.text
+
+                if 'http' in att.fallback:
+                    if not att.fallback.startswith('http'):
+                        link = ('<a href="' + att.fallback.split(': ')[1] +
+                                '">' + att_text + '</a>')
+                    else:
+                        link = ('<a href="' + att.fallback + '">' +
+                                att_text + '</a>')
+
+                    if att_text == att.title:
+                        att_text = link
+                    else:
+                        att_text += '<br>' + link
+
+                attachement_msg.append(att_text)
+
+        data['msg'] += '<br>'.join(attachement_msg)
+        return data
+
+
 def get_reporter(args, query):
     """Return object of right reporter class"""
-    reporters = {'text': TextReporter}
+    reporters = {'text': TextReporter,
+                 'html': StaticHtmlReporter}
 
     klass = reporters.get(args.format, NoneReporter)
     if klass.__name__ == 'Reporter':

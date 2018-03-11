@@ -105,7 +105,7 @@ def main():
                           "directory for store logs. All logs are organised "
                           "per channel. By default it's `logs' directory")
     generate.add_argument('-f', '--format', default=None,
-                          choices=('text', 'none'),
+                          choices=('text', 'html', 'none'),
                           help='Output format. Default is none; only database '
                           'is updated by latest messages for all/selected '
                           'channels.')

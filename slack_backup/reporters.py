@@ -54,7 +54,6 @@ class Reporter(object):
         for channel in self.channels:
             messages = []
             log_path = self.get_log_path(channel.name)
-            self._set_max_len(channel)
             try:
                 os.unlink(log_path)
             except IOError as err:
@@ -105,7 +104,10 @@ class Reporter(object):
         processor = self.types.get(msg.type, self._msg)
         data = processor(msg)
         data.update({'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'tpl': "{date} {nick} {msg}"})
+                     'tpl': "{date} {nick} {msg}"})
+
+        for emoticon in self.emoji:
+            data['msg'] = data['msg'].replace(emoticon, self.emoji[emoticon])
 
         return data
 
@@ -126,7 +128,7 @@ class Reporter(object):
 
     def _msg_me(self, msg):
         """return data for /me"""
-        return {'msg': msg.text,
+        return {'msg': msg.user.name + ' ' + msg.text,
                 'nick': self._get_symbol('me')}
 
     def _msg_file(self, msg):

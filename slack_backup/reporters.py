@@ -96,25 +96,48 @@ class Reporter(object):
                 result.append(channel)
         return result
 
-    def _msg_join(self, msg, text):
-        """return formatter for join"""
-        return
+    def _process_message(self, msg):
+        """
+        Make changes to the text (replace slack ids, replace representation of
+        urls, substitute images etc) and return dict with data suitable to
+        display.
+        """
+        processor = self.types.get(msg.type, self._msg)
+        data = processor(msg)
+        data.update({'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                'tpl': "{date} {nick} {msg}"})
 
-    def _msg_leave(self, msg, text):
-        """return formatter for leave"""
-        return
+        return data
 
-    def _msg_topic(self, msg, text):
-        """return formatter for set topic"""
-        return
+    def _msg_join(self, msg):
+        """return data for join"""
+        return {'msg': msg.text,
+                'nick': self._get_symbol('join')}
 
-    def _msg_me(self, msg, text):
-        """return formatter for /me"""
-        return
+    def _msg_leave(self, msg):
+        """return data for leave"""
+        return {'msg': msg.text,
+                'nick': self._get_symbol('leave')}
 
-    def _msg_file(self, msg, text):
-        """return formatter for /me"""
-        return
+    def _msg_topic(self, msg):
+        """return data for set topic"""
+        return {'msg': msg.text,
+                'nick': self._get_symbol('topic')}
+
+    def _msg_me(self, msg):
+        """return data for /me"""
+        return {'msg': msg.text,
+                'nick': self._get_symbol('me')}
+
+    def _msg_file(self, msg):
+        """return data for file"""
+        return {'msg': msg.text,
+                'nick': self._get_symbol('file')}
+
+    def _msg(self, msg):
+        """return data for all other message types"""
+        return {'msg': msg.text,
+                'nick': msg.user.name}
 
     def _filter_slackid(self, text):
         """filter out all of the id from slack"""
@@ -193,38 +216,17 @@ class TextReporter(Reporter):
                      'tpl': self.tpl})
         return data
 
-    def _msg_join(self, msg):
-        """return formatter for join"""
-        return {'msg': msg.text,
-                'nick': self._get_symbol('join')}
-
-    def _msg_leave(self, msg):
-        """return formatter for leave"""
-        return {'msg': msg.text,
-                'nick': self._get_symbol('leave')}
-
-    def _msg_topic(self, msg):
-        """return formatter for set topic"""
-        return {'msg': msg.text,
-                'nick': self._get_symbol('topic')}
-
-    def _msg_me(self, msg):
-        """return formatter for /me"""
-        return {'msg': msg.text,
-                'nick': self._get_symbol('me')}
-
     def _msg_file(self, msg):
-        """return formatter for file"""
+        """return data for file"""
         fpath = os.path.abspath(msg.file.filepath)
         return {'msg': self.url_pat.sub('(file://' + fpath + ') ' +
                                         msg.file.title, msg.text),
                 'nick': self._get_symbol('file')}
 
     def _msg(self, msg):
-        """return formatter for all other message types"""
+        """return data for all other message types"""
 
-        data = {'msg': msg.text,
-                'nick': msg.user.name}
+        data = super(TextReporter, self)._msg(msg)
         result = ''
 
         if msg.attachments:

@@ -30,9 +30,11 @@ class Reporter(object):
                            'file': '📂',
                            'topic': '🟅',
                            'separator': '│'}}
-    url_pat = re.compile(r'(?P<replace><http[^>]+>)')
+    literal_url_pat = re.compile(r'(?P<replace>(?P<url>https?[^\s\|]+))')
+    url_pat = re.compile(r'(?P<replace><(?P<url>http[^\|>]+)'
+                         r'(\|(?P<title>[^>]+))?>)')
     slackid_pat = re.compile(r'(?P<replace><@'
-                             '(?P<slackid>U[A-Z,0-9]+)(\|[^>]+)?[^>]*>)')
+                             r'(?P<slackid>U[A-Z,0-9]+)(\|[^>]+)?[^>]*>)')
 
     def __init__(self, args, query):
         self.out = args.output
@@ -220,7 +222,11 @@ class TextReporter(Reporter):
 
     def _msg_file(self, msg):
         """return data for file"""
-        fpath = os.path.abspath(msg.file.filepath)
+        if msg.file.filepath:
+            fpath = os.path.abspath(msg.file.filepath)
+        else:
+            fpath = 'does_not_exists'
+
         return {'msg': self.url_pat.sub('(file://' + fpath + ') ' +
                                         msg.file.title, msg.text),
                 'nick': self._get_symbol('file')}
@@ -370,7 +376,11 @@ class StaticHtmlReporter(Reporter):
 
     def _msg_file(self, msg):
         """return data for file"""
-        fpath = os.path.abspath(msg.file.filepath)
+        if msg.file.filepath:
+            fpath = os.path.abspath(msg.file.filepath)
+        else:
+            fpath = 'does_not_exists'
+
         _, ext = os.path.splitext(fpath)
         if ext.lower() in ('.png', '.jpg', '.jpeg', '.gif'):
             url = ('<img src="file://' + fpath +
@@ -389,31 +399,33 @@ class StaticHtmlReporter(Reporter):
                 'msg': msg.text,
                 'nick': msg.user.name}
 
+        link = '<a href="{url}">{title}</a>'
         attachement_msg = []
 
         if msg.attachments:
             for att in msg.attachments:
-                if att.title:
-                    att_text = att.title
-                else:
-                    att_text = att.fallback
-
-                if att.text:
-                    att_text += '<br>' + att.text
-
                 if 'http' in att.fallback:
-                    if not att.fallback.startswith('http'):
-                        link = ('<a href="' + att.fallback.split(': ')[1] +
-                                '">' + att_text + '</a>')
-                    else:
-                        link = ('<a href="' + att.fallback + '">' +
-                                att_text + '</a>')
+                    match = self.url_pat.search(att.fallback)
+                    if not match:
+                        match = self.literal_url_pat.search(att.fallback)
+                    match = match.groupdict()
 
-                    if att_text == att.title:
-                        att_text = link
-                    else:
-                        att_text += '<br>' + link
+                    if 'title' not in match:
+                        match['title'] = match['url']
+                        if att.title:
+                            match['title'] = att.title
 
+                    att_text = att.fallback.replace(match['replace'],
+                                                    link.format(**match))
+                else:
+                    match = self.url_pat.search(msg.text)
+                    if match:
+                        match = match.groupdict()
+                        match['title'] = att.fallback
+                        att_text = msg.text.replace(match['replace'],
+                                                    link.format(**match))
+                    else:
+                        att_text = att.fallback
                 attachement_msg.append(att_text)
 
         data['msg'] += '<br>'.join(attachement_msg)

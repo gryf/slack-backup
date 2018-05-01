@@ -10,6 +10,13 @@ from sqlalchemy.orm import relationship
 from slack_backup.db import Base
 
 
+def fromtimestamp(timestamp):
+    past = datetime.utcfromtimestamp(0)
+    if timestamp is None:
+        return past
+    return datetime.fromtimestamp(timestamp)
+
+
 class Purpose(Base):
     __tablename__ = 'purposes'
 
@@ -28,7 +35,7 @@ class Purpose(Base):
 
     def update(self, data_dict):
         data_dict = data_dict or {}
-        self.last_set = datetime.fromtimestamp(data_dict.get('last_set', 0))
+        self.last_set = fromtimestamp(data_dict.get('last_set'))
         self.value = data_dict.get('value')
 
     def __repr__(self):
@@ -56,7 +63,7 @@ class Topic(Base):
 
     def update(self, data_dict):
         data_dict = data_dict or {}
-        self.last_set = datetime.fromtimestamp(data_dict.get('last_set', 0))
+        self.last_set = fromtimestamp(data_dict.get('last_set'))
         self.value = data_dict.get('value')
 
     def __repr__(self):
@@ -91,7 +98,7 @@ class Channel(Base):
 
         self.slackid = data_dict.get('id', '')
         self.name = data_dict.get('name', '')
-        self.created = datetime.fromtimestamp(data_dict.get('created', 0))
+        self.created = fromtimestamp(data_dict.get('created'))
         self.is_archived = data_dict.get('is_archived', False)
 
     def __repr__(self):
@@ -207,7 +214,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True)
-    # NOTE(gryf): timestamp from messages are coming as text. It might be
+    # NOTE(gryf): timestamps from messages are coming as text. It might be
     # tempting to store them as Decimal or Integer, but it doesn't really
     # matters since in case of Decimal sqlite doesn't support it, and Integer
     # require additional conversion. It might be critical for messages to have

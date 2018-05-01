@@ -8,6 +8,7 @@ import os
 import errno
 import html.parser
 import logging
+import pathlib
 import re
 
 from slack_backup import objects as o
@@ -227,8 +228,9 @@ class TextReporter(Reporter):
         else:
             fpath = 'does_not_exists'
 
-        return {'msg': self.url_pat.sub('(file://' + fpath + ') ' +
-                                        msg.file.title, msg.text),
+        return {'msg': self.url_pat.sub('(' +
+                                        pathlib.PurePath(fpath).as_uri() +
+                                        ') ' + msg.file.title, msg.text),
                 'nick': self._get_symbol('file')}
 
     def _msg(self, msg):
@@ -383,11 +385,11 @@ class StaticHtmlReporter(Reporter):
 
         _, ext = os.path.splitext(fpath)
         if ext.lower() in ('.png', '.jpg', '.jpeg', '.gif'):
-            url = ('<img src="file://' + fpath +
-                   '" height="300" alt="' + msg.file.title +
-                   '">')
+            url = ('<img src="' + pathlib.PurePath(fpath).as_uri() +
+                   '" height="300" alt="' + msg.file.title + '">')
         else:
-            url = ('<a href="file://' + fpath + '">' + msg.file.title + '</a>')
+            url = ('<a href="' + pathlib.PurePath(fpath).as_uri() +
+                   '">' + msg.file.title + '</a>')
 
         return {'msg': self.url_pat.sub(url, msg.text),
                 'nick': self._get_symbol('file')}

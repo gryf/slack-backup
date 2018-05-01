@@ -74,7 +74,7 @@ class Reporter(object):
 
     def write_msg(self, messages, log):
         """Write message to file"""
-        with open(log, "a") as fobj:
+        with open(log, "a", encoding='utf8') as fobj:
             for message in messages:
                 data = self._process_message(message)
                 fobj.write(data['tpl'].format(**data))
@@ -343,19 +343,20 @@ class StaticHtmlReporter(Reporter):
         """Generate raport"""
         super(StaticHtmlReporter, self).generate()
 
-        with open(os.path.join(self.out, "index.html"), "w") as fobj:
+        with open(os.path.join(self.out, "index.html"), "w",
+                  encoding='utf8') as fobj:
             content = {'title': 'index',
                        'msgs': self.index_list % self._get_index_list()}
             fobj.write(self.index_templ % content)
 
     def write_msg(self, messages, log):
         """Write message to file"""
-        with open(log, "w") as fobj:
+        with open(log, "w", encoding='utf8') as fobj:
             fobj.write(self.msg_head)
 
         super(StaticHtmlReporter, self).write_msg(messages, log)
 
-        with open(log, "a") as fobj:
+        with open(log, "a", encoding='utf8') as fobj:
             fobj.write(self.msg_foot)
 
     def _get_index_list(self):

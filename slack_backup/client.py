@@ -6,6 +6,7 @@ import getpass
 import json
 import logging
 import os
+import pprint
 
 import slackclient
 import sqlalchemy.orm.exc
@@ -176,7 +177,8 @@ class Client(object):
             self.session.flush()
             return user
 
-        raise ValueError('Cannot identify user out of data:' + str(data))
+        logging.exception('Failed on data: %s', pprint.pformat(data))
+        raise ValueError('Cannot identify user out of given data.')
 
     def _create_message(self, data, channel):
         """
@@ -258,11 +260,15 @@ class Client(object):
         user = self.q(o.User).filter(o.User.slackid ==
                                      data['creator']).one_or_none()
 
-        obj = self.q(classobj).\
-            filter(classobj.last_set ==
-                   datetime.fromtimestamp(data['last_set'])).\
-            filter(classobj.value == data['value']).\
-            filter(classobj.creator == user).one_or_none()
+        try:
+            obj = self.q(classobj).\
+                filter(classobj.last_set ==
+                       datetime.fromtimestamp(data['last_set'])).\
+                filter(classobj.value == data['value']).\
+                filter(classobj.creator == user).one_or_none()
+        except OSError:
+            logging.exception('Failed on data: %s', pprint.pformat(data))
+            raise
 
         if not obj:
             # break channel relation

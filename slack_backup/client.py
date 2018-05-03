@@ -191,7 +191,7 @@ class Client(object):
 
         user = self._get_user(data)
 
-        if not data['text'].strip():
+        if not any((data.get('attachments'), data['text'].strip())):
             logging.info("Skipping message from `%s' since it's empty",
                          user.name)
             return

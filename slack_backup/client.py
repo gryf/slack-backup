@@ -8,6 +8,7 @@ import logging
 import os
 
 import slackclient
+import sqlalchemy.orm.exc
 
 from slack_backup import db
 from slack_backup import objects as o
@@ -75,14 +76,12 @@ class Client(object):
 
     def update_users(self):
         """Fetch and update user list with current state in db"""
-        logging.info("Fetching and updating user information in DB")
-        result = self.slack.api_call("users.list", presence=0)
+        result = self._users_list()
 
-        if not result.get("ok"):
-            logging.error(result['error'])
+        if not result:
             return
 
-        for user_data in result['members']:
+        for user_data in result:
             user = self.q(o.User).\
                 filter(o.User.slackid == user_data['id']).one_or_none()
 
@@ -143,6 +142,42 @@ class Client(object):
         """
         self.reporter.generate()
 
+    def _get_user(self, data):
+        """
+        Return an User object. It can be regular one, or a bot. In case of
+        bot, check if it exists in db, and in case of failure - create it,
+        since bots are not returned by user.list API method.
+        """
+        try:
+            return self.q(o.User).filter(o.User.slackid == data['user']).one()
+        except KeyError:
+            pass
+
+        try:
+            return self.q(o.User).filter(o.User.slackid ==
+                                         data['comment']['user']).one()
+        except KeyError:
+            pass
+
+        try:
+            return self.q(o.User).filter(o.User.slackid ==
+                                         data['bot_id']).one()
+        except KeyError:
+            pass
+        except sqlalchemy.orm.exc.NoResultFound:
+            result = self.slack.api_call('bots.info', bot=data['bot_id'])
+            if not result.get("ok"):
+                logging.error(result['error'])
+                return None
+
+            user = o.User(result['bot'])
+            user.real_name = result['bot']['name']
+            self.session.add(user)
+            self.session.flush()
+            return user
+
+        raise ValueError('Cannot identify user out of data:' + str(data))
+
     def _create_message(self, data, channel):
         """
         Create message with corresponding possible metadata, like reactions,
@@ -154,12 +189,7 @@ class Client(object):
 
         logging.debug('Message data: %s', json.dumps(data))
 
-        try:
-            user = self.q(o.User).\
-                filter(o.User.slackid == data['user']).one()
-        except KeyError:
-            user = self.q(o.User).\
-                    filter(o.User.slackid == data['comment']['user']).one()
+        user = self._get_user(data)
 
         if not data['text'].strip():
             logging.info("Skipping message from `%s' since it's empty",
@@ -288,7 +318,8 @@ class Client(object):
         Get users list using Slack API. Return list of channel data or None
         in case of error.
         """
-        result = self.slack.api_call("users.list", presence=0)
+        logging.info("Fetching and updating user information in DB")
+        result = self.slack.api_call("users.list")
 
         if not result.get("ok"):
             logging.error(result['error'])

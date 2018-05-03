@@ -1,20 +1,12 @@
 """
 Convinient object mapping from slack API reponses
 """
-from datetime import datetime
-
 from sqlalchemy import Column, Integer, Text, Boolean, ForeignKey
 from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
 from slack_backup.db import Base
-
-
-def fromtimestamp(timestamp):
-    past = datetime.utcfromtimestamp(0)
-    if timestamp is None:
-        return past
-    return datetime.fromtimestamp(timestamp)
+from slack_backup import utils
 
 
 class Purpose(Base):
@@ -35,7 +27,7 @@ class Purpose(Base):
 
     def update(self, data_dict):
         data_dict = data_dict or {}
-        self.last_set = fromtimestamp(data_dict.get('last_set'))
+        self.last_set = utils.fromtimestamp(data_dict.get('last_set'))
         self.value = data_dict.get('value')
 
     def __repr__(self):
@@ -63,7 +55,7 @@ class Topic(Base):
 
     def update(self, data_dict):
         data_dict = data_dict or {}
-        self.last_set = fromtimestamp(data_dict.get('last_set'))
+        self.last_set = utils.fromtimestamp(data_dict.get('last_set'))
         self.value = data_dict.get('value')
 
     def __repr__(self):
@@ -98,7 +90,7 @@ class Channel(Base):
 
         self.slackid = data_dict.get('id', '')
         self.name = data_dict.get('name', '')
-        self.created = fromtimestamp(data_dict.get('created'))
+        self.created = utils.fromtimestamp(data_dict.get('created'))
         self.is_archived = data_dict.get('is_archived', False)
 
     def __repr__(self):
@@ -243,7 +235,7 @@ class Message(Base):
         self.update(data_dict)
 
     def datetime(self):
-        return datetime.fromtimestamp(float(self.ts))
+        return utils.fromtimestamp(float(self.ts))
 
     def update(self, data_dict):
         data_dict = data_dict or {}

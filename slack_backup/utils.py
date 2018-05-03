@@ -1,6 +1,7 @@
 """
 Some utils functions. Jsut to not copypaste the code around
 """
+from datetime import datetime
 import errno
 import os
 import logging
@@ -42,3 +43,13 @@ def same_files(file1, file2):
         hash2 = hashlib.sha256(fobj.read())
 
     return hash1.hexdigest() == hash2.hexdigest()
+
+
+def fromtimestamp(timestamp):
+    """
+    Return datetime object from provided timestamp. If timestamp argument is
+    falsy, datetime object placed in January 1970 will be retuned.
+    """
+    if not timestamp:
+        return datetime.utcfromtimestamp(0)
+    return datetime.fromtimestamp(timestamp)

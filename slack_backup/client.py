@@ -1,7 +1,6 @@
 """
 Create backup for certain date for specified channel in slack
 """
-from datetime import datetime
 import getpass
 import json
 import logging
@@ -15,6 +14,7 @@ from slack_backup import db
 from slack_backup import objects as o
 from slack_backup import download
 from slack_backup import reporters
+from slack_backup import utils
 
 
 class Client(object):
@@ -260,15 +260,11 @@ class Client(object):
         user = self.q(o.User).filter(o.User.slackid ==
                                      data['creator']).one_or_none()
 
-        try:
-            obj = self.q(classobj).\
-                filter(classobj.last_set ==
-                       datetime.fromtimestamp(data['last_set'])).\
-                filter(classobj.value == data['value']).\
-                filter(classobj.creator == user).one_or_none()
-        except OSError:
-            logging.exception('Failed on data: %s', pprint.pformat(data))
-            raise
+        obj = (self.q(classobj).
+               filter(classobj.last_set ==
+                      utils.fromtimestamp(data['last_set'])).
+               filter(classobj.value == data['value']).
+               filter(classobj.creator == user).one_or_none())
 
         if not obj:
             # break channel relation

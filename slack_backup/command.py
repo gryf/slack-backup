@@ -90,13 +90,17 @@ def main():
     fetch.add_argument('-c', '--channels', default=None, nargs='+',
                        help='List of channels to perform actions on. '
                        'Default is all channels.')
-
     fetch.add_argument('-d', '--database', default=None,
                        help='Path to the database file.')
-
     fetch.add_argument('-i', '--config', default=None,
                        help='Use specific config file.')
-
+    fetch.add_argument('-f', '--url_file_to_attachement', default=False,
+                       action='store_true',
+                       help='Treat shared files (but not uploaded to the '
+                       'Slack servers) as attachement. By default there will '
+                       'be file created in current directory with url and '
+                       'path to the filename under which it would be '
+                       'registered in the DB.')
     fetch.set_defaults(func=fetch_data)
 
     generate = subparser.add_parser('generate', help='Generate logs out of '
@@ -113,7 +117,6 @@ def main():
                           choices=('plain', 'unicode'),
                           help='Choose theme for text output. It doesn\'t '
                           'affect other output formats.')
-
     generate.add_argument('-v', '--verbose', help='Be verbose. Adding more '
                           '"v" will increase verbosity', action="count",
                           default=None)
@@ -123,13 +126,10 @@ def main():
     generate.add_argument('-c', '--channels', default=[], nargs='+',
                           help='List of channels to perform actions on. '
                           'Default is all channels.')
-
     generate.add_argument('-d', '--database', default=None,
                           help='Path to the database file.')
-
     generate.add_argument('-i', '--config', default=None,
                           help='Use specific config file.')
-
     generate.set_defaults(func=generate_raport)
 
     args = parser.parse_args()

@@ -13,8 +13,10 @@ class Config(object):
     """Configuration keeper"""
 
     ints = ['verbose', 'quiet']
+    bools = ['url_file_to_attachement']
 
-    sections = {'common': ['channels', 'database', 'quiet', 'verbose'],
+    sections = {'common': ['channels', 'database', 'quiet', 'verbose',
+                           'url_file_to_attachement'],
                 'fetch': ['user', 'password', 'team', 'token'],
                 'generate': ['output', 'format', 'theme']}
 
@@ -35,7 +37,8 @@ class Config(object):
                          'token': None,
                          'output': None,
                          'format': None,
-                         'theme': None}
+                         'theme': None,
+                         'url_file_to_attachement': False}
         # This message supposed to be displayed in INFO level. During the time
         # of running the code where it should be displayed there is no
         # complete information about logging level. Displaying message is
@@ -79,6 +82,8 @@ class Config(object):
             for option in self.sections[section]:
                 if option in self.ints:
                     val = self.cp.getint(section, option, fallback=0)
+                elif option in self.bools:
+                    val = self.cp.getboolean(section, option, fallback=False)
                 elif option == 'channels':
                     val = self.cp.get(section, option, fallback='[]')
                     val = json.loads(val)

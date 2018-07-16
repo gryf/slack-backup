@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import pprint
+import uuid
 
 import slackclient
 import sqlalchemy.orm.exc
@@ -46,6 +47,13 @@ class Client(object):
         if 'format' in args:
             self.reporter = reporters.get_reporter(args, self.q)
 
+        self._url_file_to_attachment = args.url_file_to_attachment
+
+        self._dlpath = utils.get_temp_name(dir=os.path.curdir,
+                                           prefix='manual_download_',
+                                           unlink=True)
+        self._dldata = []
+
     def update(self):
         """
         Perform an update, store data to db
@@ -54,6 +62,7 @@ class Client(object):
         self.update_users()
         self.update_channels()
         self.update_history()
+        self._finalize()
 
     def update_channels(self):
         """Fetch and update channel list with current state in db"""
@@ -210,19 +219,31 @@ class Client(object):
                 message.reactions.append(o.Reaction(reaction_data))
 
         if data.get('subtype') == 'file_share':
-            self._file_data(message, data['file'], data['file']['is_external'])
+            if (self._url_file_to_attachment and
+                    data['file'].get('is_external')):
+                fdata = data['file']
+                # change message type from file_share to default
+                message.type = ''
+                message.text = (message.text.split('shared a file:')[0] +
+                                'shared a file: ')
+                logging.debug("Found external file `%s'. Saving as "
+                              "attachment.", fdata['url_private'])
+                self._att_data(message, [{'title': fdata['name'],
+                                          'text': fdata['url_private'],
+                                          'fallback': ''}])
+            else:
+                self._file_data(message, data['file'])
         elif data.get('subtype') == 'pinned_item':
             if data.get('attachments'):
                 self._att_data(message, data['attachments'])
             elif data.get('item'):
-                self._file_data(message, data['item'],
-                                data['item']['is_external'])
+                self._file_data(message, data['item'])
         elif data.get('attachments'):
             self._att_data(message, data['attachments'])
 
         self.session.add(message)
 
-    def _file_data(self, message, data, is_external=True):
+    def _file_data(self, message, data):
         """
         Process file data. Could be either represented as 'file' object or
         'item' object in case of pinned items
@@ -231,8 +252,15 @@ class Client(object):
         if data.get('is_starred'):
             message.is_starred = True
 
-        if is_external:
-            logging.debug("Found external file `%s'", data['url_private'])
+        if data.get('is_external'):
+            # Create a link and corresponding file name for manual download
+            fname = str(uuid.uuid4())
+            message.file.filepath = self.downloader.get_filepath(fname, 'file')
+            logging.info("Please, manually download an external file from "
+                         "URL `%s' to `%s'", data['url_private'],
+                         message.file.filepath)
+            self._dldata.append('%s --> %s\n' % (data['url_private'],
+                                                 message.file.filepath))
             message.file.url = data['url_private']
         else:
             logging.debug("Found internal file `%s'",
@@ -354,3 +382,14 @@ class Client(object):
                 return result['messages'], None
 
         return [], None
+
+    def _finalize(self):
+        """Create misc files if necessary - like manual donwload"""
+        if not self._dldata:
+            return
+
+        with open(self._dlpath, "a") as fobj:
+            fobj.write(''.join(self._dldata))
+        logging.warning("Manual action required! Download all the files "
+                        "listed in `%s' and each of them save as file listed "
+                        "right after `-->' sign", self._dlpath)

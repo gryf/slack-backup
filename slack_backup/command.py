@@ -94,10 +94,10 @@ def main():
                        help='Path to the database file.')
     fetch.add_argument('-i', '--config', default=None,
                        help='Use specific config file.')
-    fetch.add_argument('-f', '--url_file_to_attachement', default=False,
+    fetch.add_argument('-f', '--url_file_to_attachment', default=False,
                        action='store_true',
                        help='Treat shared files (but not uploaded to the '
-                       'Slack servers) as attachement. By default there will '
+                       'Slack servers) as attachment. By default there will '
                        'be file created in current directory with url and '
                        'path to the filename under which it would be '
                        'registered in the DB.')

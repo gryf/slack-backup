@@ -13,11 +13,11 @@ class Config(object):
     """Configuration keeper"""
 
     ints = ['verbose', 'quiet']
-    bools = ['url_file_to_attachement']
+    bools = ['url_file_to_attachment']
 
-    sections = {'common': ['channels', 'database', 'quiet', 'verbose',
-                           'url_file_to_attachement'],
-                'fetch': ['user', 'password', 'team', 'token'],
+    sections = {'common': ['channels', 'database', 'quiet', 'verbose'],
+                'fetch': ['user', 'password', 'team', 'token',
+                          'url_file_to_attachment'],
                 'generate': ['output', 'format', 'theme']}
 
     def __init__(self):
@@ -38,7 +38,7 @@ class Config(object):
                          'output': None,
                          'format': None,
                          'theme': None,
-                         'url_file_to_attachement': False}
+                         'url_file_to_attachment': False}
         # This message supposed to be displayed in INFO level. During the time
         # of running the code where it should be displayed there is no
         # complete information about logging level. Displaying message is

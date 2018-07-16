@@ -90,6 +90,28 @@ where:
   created, but you'll (obviously) lost all the records. Besides the db file,
   assets directory might be created for downloadable items.
 
+There is one more switch to take into consideration -
+``-f/--url_file_to_attachment`` which influence the way how external file
+share would be treated. First of all, what is *external* file share from slack
+point of view, one could ask. Slack have some sort of integration with Goolgle
+services, like Googla Drive, which provide slack users to create or "upload"
+files from Google Drive. "Upload", since no uploading actually takes place,
+and only URL is provided for such "uploads". By default `slack-backup` will
+create a file which is prefixed ``manual_download_`` which will contain url and
+destination path to the file, where user should manual download file to.
+Example file contents:
+
+.. code::
+
+   http://foo.bar.com/some/file --> assets/files/83340cbe-fee2-4d2e-bdb1-cace9c82e6d4
+   http://foo.bar.com/some/other/file --> assets/files/8a4c873c-1864-4f1b-b515-bbef119f33a3
+   http://docs/google.com/some/gdoc/file --> assets/files/ec8752bc-0bf8-4743-a8bd-9756107ab386
+
+By setting ``url_file_to_attachment`` flag (or making it set to true in config
+file) such "uploads" would be internally converted into Slack "attachment",
+which internally is an object to store external links, so there is no need for
+user interaction.
+
 During DB creation, all available messages are stored in the database. On the
 next run, ``fetch`` would only take those records, which are older from
 currently oldest in DB. So that it will only fetch a subset of the overall of
@@ -136,6 +158,7 @@ For convenience, you can place all of needed options into configuration file
    theme = plain
 
    [fetch]
+   url_file_to_attachment = false
    user =
    password =
    team =

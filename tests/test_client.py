@@ -1,4 +1,5 @@
-from unittest import TestCase
+import copy
+import unittest
 from unittest import mock
 
 from slack_backup import client
@@ -348,6 +349,234 @@ MSG3 = {"ok": True,
         "has_more": False,
         "is_limited": False}
 
+STARRED = {"ok": True,
+           "oldest": "1479505026.000003",
+           "messages": [],
+           "has_more": False,
+           "is_limited": False}
+
+SHARED = {"type": "message",
+          "subtype": "file_share",
+          "text": "<@UAAAAAAAA> shared a file: <https://bla."
+          "slack.com/files/name%20lastname/F7ARMB4JU/17|"
+          "some_spreadsheet>",
+          "file": {
+                   "id": "F6ABMB0Ja",
+                   "created": 1479147929,
+                   "timestamp": 1479147929,
+                   "name": "att name",
+                   "title": "some_spreadsheet",
+                   "mimetype": "application/vnd.google-apps."
+                   "spreadsheet",
+                   "filetype": "gsheet",
+                   "pretty_type": "GDocs Spreadsheet",
+                   "user":  'UAAAAAAAA',
+                   "editable": False,
+                   "size": 666,
+                   "mode": "external",
+                   "is_external": True,
+                   "external_type": "gdrive",
+                   "is_public": True,
+                   "public_url_shared": False,
+                   "display_as_bot": False,
+                   "username": "",
+                   "url_private": "https://docs.google.com/"
+                   "spreadsheets/d/name%20lastname/"
+                   "edit?usp=drivesdk",
+                   # removed useless thumb_* definition
+                   "image_exif_rotation": 1,
+                   "original_w": 1024,
+                   "original_h": 1449,
+                   "permalink": "https://bla.slack.com/files/"
+                   "name%20lastname/F7ARMB4JU/17",
+                   "channels": ["C00000001"],
+                   "groups": [],
+                   "ims": [],
+                   "comments_count": 0,
+                   "has_rich_preview": True
+                  },
+          "user": 'UAAAAAAAA',
+          "upload": False,
+          "display_as_bot": False,
+          "username": "name lastname",
+          "bot_id": None,
+          "ts": "1479147929.000043"}
+
+PINNED = {'attachments': [{'fallback': 'blah',
+                           'id': 1,
+                           'image_bytes': 5,
+                           'image_height': 2,
+                           'image_url': 'http://fake.com/i.png',
+                           'image_width': 1,
+                           'original_url': 'http://fake.com/fake',
+                           'service_icon': 'http://fake.com/favicon.ico',
+                           'service_name': 'fake service',
+                           'text': 'the text',
+                           'title': 'Fake service title',
+                           'title_link': 'http://fake.com/fake'}],
+          'item_type': 'C',
+          'subtype': 'pinned_item',
+          'text': '<@UAAAAAAAA> pinned a message to this channel.',
+          'ts': '1479147929.000043',
+          'type': 'message',
+          'user': 'UAAAAAAAA'}
+
+EXTERNAL_DATA = {"bot_id": None,
+                 "display_as_bot": False,
+                 "file": {
+                          "channels": [
+                                       "xxx"
+                                      ],
+                          "id": "F7ARMB4JU",
+                          "created": 1506819447,
+                          "timestamp": 1506819447,
+                          "name": "17",
+                          "title": "PT Card Count 9/30/17",
+                          "mimetype": "application/"
+                                      "vnd.google-apps.spreadsheet",
+                          "filetype": "gsheet",
+                          "pretty_type": "GDocs Spreadsheet",
+                          "user": "xxx",
+                          "editable": False,
+                          "size": 37583,
+                          "mode": "external",
+                          "is_external": True,
+                          "external_type": "gdrive",
+                          "is_public": True,
+                          "public_url_shared": False,
+                          "display_as_bot": False,
+                          "username": "",
+                          "url_private": "https://docs.google.com/"
+                                         "spreadsheets/d/xxx/edit?"
+                                         "usp=drivesdk",
+                          "thumb_64": "https://files.slack.com/files-tmb/"
+                                      "xxx-F7ARMB4JU-xxx/17_64.png",
+                          "thumb_80": "https://files.slack.com/files-tmb/"
+                                      "xxx-F7ARMB4JU-xxx/17_80.png",
+                          "thumb_360": "https://files.slack.com/files-tmb"
+                                       "/xxx-F7ARMB4JU-xxx/17_360.png",
+                          "thumb_360_w": 254,
+                          "thumb_360_h": 360,
+                          "thumb_480": "https://files.slack.com/files-tmb"
+                                       "/xxx-F7ARMB4JU-xxx/17_480.png",
+                          "thumb_480_w": 339,
+                          "thumb_480_h": 480,
+                          "thumb_160": "https://files.slack.com/files-tmb"
+                                       "/xxx-F7ARMB4JU-xxx/17_160.png",
+                          "thumb_720": "https://files.slack.com/files-tmb"
+                                       "/xxx-F7ARMB4JU-xxx/17_720.png",
+                          "thumb_720_w": 509,
+                          "thumb_720_h": 720,
+                          "thumb_800": "https://files.slack.com/files-tmb"
+                                       "/xxx-F7ARMB4JU-xxx/17_800.png",
+                          "thumb_800_w": 800,
+                          "thumb_800_h": 1132,
+                          "thumb_960": "https://files.slack.com/files-tmb"
+                                       "/xxx-F7ARMB4JU-xxx/17_960.png",
+                          "thumb_960_w": 678,
+                          "thumb_960_h": 960,
+                          "thumb_1024": "https://files.slack.com/files-tmb"
+                                        "/xxx-F7ARMB4JU-xxx/17_1024.png",
+                          "thumb_1024_w": 724,
+                          "thumb_1024_h": 1024,
+                          "image_exif_rotation": 1,
+                          "original_w": 1024,
+                          "original_h": 1449,
+                          "permalink": "https://xxx.slack.com/files/xxx/"
+                                       "F7ARMB4JU/17",
+                          "groups": [],
+                          "ims": [],
+                          "comments_count": 0,
+                          "has_rich_preview": True},
+                 "user": "xxx",
+                 "upload": False,
+                 "username": "xxx"}
+
+INTERNAL_DATA = {"bot_id": None,
+                 "display_as_bot": False,
+                 "file": {"channels": ["zzz"],
+                          "comments_count": 1,
+                          "created": 1524724681,
+                          "display_as_bot": False,
+                          "editable": False,
+                          "external_type": "",
+                          "filetype": "jpg",
+                          "groups": [],
+                          "id": "id",
+                          "image_exif_rotation": 1,
+                          "ims": [],
+                          "initial_comment": {"comment": "bla",
+                                              "created": 1524724681,
+                                              "id": "yyy",
+                                              "is_intro": True,
+                                              "timestamp": 1524724681,
+                                              "user": "UAAAAAAAA"},
+                          "is_external": False,
+                          "is_public": True,
+                          "mimetype": "image/jpeg",
+                          "mode": "hosted",
+                          "name": "img.jpg",
+                          "original_h": 768,
+                          "original_w": 1080,
+                          "permalink": "https://fake.slack.com/files/"
+                                       "UAAAAAAAA/id/img.jpg",
+                          "permalink_public": "https://slack-files.com/"
+                                              "TXXXXXX-id-3de9b969d2",
+                          "pretty_type": "JPEG",
+                          "public_url_shared": False,
+                          "reactions": [{"count": 1,
+                                         "name": "thinking_face",
+                                         "users": ["U6P9KEALW"]}],
+                          "size": 491335,
+                          "thumb_1024": "https://files.slack.com/files-tmb/"
+                                        "TXXXXXX-id-123/img_1024.jpg",
+                          "thumb_1024_h": 728,
+                          "thumb_1024_w": 1024,
+                          "thumb_160": "https://files.slack.com/files-tmb/"
+                                       "TXXXXXX-id-123/img_160.jpg",
+                          "thumb_360": "https://files.slack.com/files-tmb/"
+                                       "TXXXXXX-id-123/img_360.jpg",
+                          "thumb_360_h": 256,
+                          "thumb_360_w": 360,
+                          "thumb_480": "https://files.slack.com/files-tmb/"
+                                       "TXXXXXX-id-123/img_480.jpg",
+                          "thumb_480_h": 341,
+                          "thumb_480_w": 480,
+                          "thumb_64": "https://files.slack.com/files-tmb/"
+                                      "TXXXXXX-id-123/img_64.jpg",
+                          "thumb_720": "https://files.slack.com/files-tmb/"
+                                       "TXXXXXX-id-123/img_720.jpg",
+                          "thumb_720_h": 512,
+                          "thumb_720_w": 720,
+                          "thumb_80": "https://files.slack.com/files-tmb/"
+                                      "TXXXXXX-id-123/img_80.jpg",
+                          "thumb_800": "https://files.slack.com/files-tmb/"
+                                       "TXXXXXX-id-123/img_800.jpg",
+                          "thumb_800_h": 569,
+                          "thumb_800_w": 800,
+                          "thumb_960": "https://files.slack.com/files-tmb/"
+                                       "TXXXXXX-id-123/img_960.jpg",
+                          "thumb_960_h": 683,
+                          "thumb_960_w": 960,
+                          "timestamp": 1524724681,
+                          "title": "img.jpg",
+                          "url_private": "https://files.slack.com/files-pri/"
+                                         "TXXXXXX-id/img.jpg",
+                          "url_private_download": "https://files.slack.com/"
+                                                  "files-pri/TXXXXXX-id/"
+                                                  "download/img.jpg",
+                          "user": "UAAAAAAAA",
+                          "username": ""},
+                 "subtype": "file_share",
+                 "text": "<@UAAAAAAAA> uploaded a file: <https://fake.slack."
+                         "com/files/UAAAAAAAA/id/img.jpg|img.jpg> and "
+                         "commented: bla",
+                 "ts": "1524724685.000201",
+                 "type": "message",
+                 "upload": True,
+                 "user": "UAAAAAAAA",
+                 "username": "bob"}
+
 
 class FakeArgs(object):
     token = 'token_string'
@@ -356,12 +585,13 @@ class FakeArgs(object):
     team = 'fake_team'
     database = None
     channels = None
+    url_file_to_attachment = False
 
     def __contains__(self, key):
         return hasattr(self, key)
 
 
-class TestApiCalls(TestCase):
+class TestApiCalls(unittest.TestCase):
 
     def test_channels_list(self):
         cl = client.Client(FakeArgs())
@@ -404,7 +634,7 @@ class TestApiCalls(TestCase):
         self.assertIsNone(ts)
 
 
-class TestClient(TestCase):
+class TestClient(unittest.TestCase):
 
     def test_update_users(self):
         cl = client.Client(FakeArgs())
@@ -422,7 +652,7 @@ class TestClient(TestCase):
         self.assertEqual(users[0].slackid, 'UAAAAAAAA')
 
 
-class TestMessage(TestCase):
+class TestMessage(unittest.TestCase):
 
     def setUp(self):
         args = FakeArgs()
@@ -453,3 +683,174 @@ class TestMessage(TestCase):
         self.cl.update_history()
 
         self.assertEqual(len(self.cl.q(o.Message).all()), 6)
+
+
+class TestCreateMessage(unittest.TestCase):
+
+    @mock.patch('slack_backup.client.Client._file_data')
+    @mock.patch('slack_backup.client.Client._get_user')
+    def test_empty_message(self, gu, fd):
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value='aa')
+        cl.session = mock.MagicMock()
+        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
+
+        cl._create_message({'type': 'message', 'text': ''}, channel)
+        cl.session.add.assert_not_called()
+
+    @mock.patch('slack_backup.client.Client._file_data')
+    @mock.patch('slack_backup.client.Client._get_user')
+    def test_message_with_reaction(self, gu, fd):
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value='aa')
+        cl.session = mock.MagicMock()
+        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
+
+        cl._create_message(MSGS['messages'][1], channel)
+
+        msg = cl.session.add.call_args[0][0]
+        self.assertEqual(len(msg.attachments), 1)
+        self.assertEqual(len(msg.reactions), 1)
+        self.assertEqual(msg.reactions[0].name, '+1')
+        self.assertFalse(msg.is_starred)
+
+    @mock.patch('slack_backup.client.Client._get_user')
+    def test_starred_item(self, gu):
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value='aa')
+        cl.session = mock.MagicMock()
+        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
+
+        data = {"type": "message",
+                "user": "UAAAAAAAA",
+                "text": "test",
+                "ts": "1479501074.000032",
+                "is_starred": True}
+        cl._create_message(data, channel)
+
+        msg = cl.session.add.call_args[0][0]
+        self.assertEqual(len(msg.attachments), 0)
+        self.assertEqual(msg.text, 'test')
+        self.assertEqual(msg.type, '')
+        self.assertTrue(msg.is_starred)
+
+    @mock.patch('slack_backup.client.Client._file_data')
+    @mock.patch('slack_backup.client.Client._get_user')
+    def test_external_file_upload(self, gu, fd):
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value='aa')
+        cl.session = mock.MagicMock()
+        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
+
+        cl._create_message(SHARED, channel)
+
+        msg = cl.session.add.call_args[0][0]
+        self.assertEqual(len(msg.attachments), 0)
+        self.assertTrue('shared a file' in msg.text)
+        self.assertFalse(msg.is_starred)
+        self.assertEqual(msg.type, 'file_share')
+        fd.assert_called_once_with(msg, SHARED['file'])
+
+    @mock.patch('slack_backup.client.Client._get_user')
+    def test_external_file_upload_as_attachment(self, gu):
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value='aa')
+        cl.session = mock.MagicMock()
+        cl._url_file_to_attachment = True
+        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
+
+        cl._create_message(SHARED, channel)
+
+        msg = cl.session.add.call_args[0][0]
+        self.assertEqual(len(msg.attachments), 1)
+        self.assertTrue('shared a file' in msg.text)
+        self.assertFalse(msg.is_starred)
+
+    @mock.patch('slack_backup.client.Client._file_data')
+    @mock.patch('slack_backup.client.Client._get_user')
+    def test_pinned_message_with_attachments(self, gu, fd):
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value='aa')
+        cl.session = mock.MagicMock()
+        cl._url_file_to_attachment = True
+        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
+
+        cl._create_message(PINNED, channel)
+
+        msg = cl.session.add.call_args[0][0]
+        self.assertEqual(len(msg.attachments), 1)
+        self.assertEqual(msg.text, '<@UAAAAAAAA> pinned a message to this '
+                         'channel.')
+        self.assertEqual(msg.type, 'pinned_item')
+        self.assertEqual(msg.attachments[0].text, 'the text')
+        self.assertEqual(msg.attachments[0].title, 'Fake service title')
+
+
+class TestFileShare(unittest.TestCase):
+
+    @mock.patch('slack_backup.download.Download.download')
+    @mock.patch('slack_backup.utils.makedirs')
+    def test_file_data(self, md, dl):
+        dl.side_effect = ['some_path']
+
+        url = INTERNAL_DATA['file']['url_private_download']
+
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value=url)
+        cl.session = mock.MagicMock()
+
+        msg = o.Message()
+        cl._file_data(msg, INTERNAL_DATA['file'])
+
+        self.assertIsNotNone(msg.file)
+        self.assertEqual(msg.file.filepath, 'some_path')
+
+    @mock.patch('slack_backup.download.Download.download')
+    @mock.patch('slack_backup.utils.makedirs')
+    def test_starred_file_data(self, md, dl):
+        dl.side_effect = ['some_path']
+
+        data = copy.deepcopy(INTERNAL_DATA)
+        data['file']['is_starred'] = True
+        url = data['file']['url_private_download']
+
+        cl = client.Client(FakeArgs())
+        cl.downloader._download = mock.MagicMock(return_value=url)
+        cl.session = mock.MagicMock()
+
+        msg = o.Message()
+        cl._file_data(msg, data['file'])
+
+        self.assertTrue(msg.is_starred)
+
+    @mock.patch('uuid.uuid4')
+    @mock.patch('slack_backup.download.Download.download')
+    @mock.patch('slack_backup.utils.makedirs')
+    def test_external_file_data(self, md, dl, uuid):
+        uuid.side_effect = ['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee']
+        dl.side_effect = ['some_path']
+
+        # url = EXTERNAL_DATA['file']['url_private']
+
+        cl = client.Client(FakeArgs())
+        cl.session = mock.MagicMock()
+
+        # pretend, that we are authorized
+        cl.downloader._authorized = True
+
+        msg = o.Message()
+        expexted_line = ('https://docs.google.com/spreadsheets/d/xxx/edit?'
+                         'usp=drivesdk --> '
+                         'assets/files/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\n')
+
+        cl._file_data(msg, EXTERNAL_DATA['file'])
+        file_ = cl.session.add.call_args[0][0]
+        self.assertEqual(cl._dldata, [expexted_line])
+        self.assertEqual(file_.filepath,
+                         'assets/files/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
+
+        dl.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

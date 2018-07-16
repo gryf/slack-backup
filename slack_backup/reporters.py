@@ -403,7 +403,7 @@ class StaticHtmlReporter(Reporter):
                 'nick': msg.user.name}
 
         link = '<a href="{url}">{title}</a>'
-        attachement_msg = []
+        attachment_msg = []
 
         if msg.attachments:
             for att in msg.attachments:
@@ -429,9 +429,9 @@ class StaticHtmlReporter(Reporter):
                                                     link.format(**match))
                     else:
                         att_text = att.fallback
-                attachement_msg.append(att_text)
+                attachment_msg.append(att_text)
 
-        data['msg'] += '<br>'.join(attachement_msg)
+        data['msg'] += '<br>'.join(attachment_msg)
         return data
 
 

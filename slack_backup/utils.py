@@ -24,10 +24,12 @@ def makedirs(path):
                 raise
 
 
-def get_temp_name():
+def get_temp_name(suffix='', prefix='tmp', dir=None, unlink=False):
     """Return temporary file name"""
-    fdesc, fname = tempfile.mkstemp()
+    fdesc, fname = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
     os.close(fdesc)
+    if unlink:
+        os.unlink(fname)
     return fname
 
 

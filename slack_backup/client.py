@@ -1,6 +1,7 @@
 """
 Create backup for certain date for specified channel in slack
 """
+from datetime import datetime
 import getpass
 import json
 import logging
@@ -23,6 +24,8 @@ class Client(object):
     This class is intended to provide an interface for getting, storing and
     querying data fetched out using Slack API.
     """
+    RAW = '%Y%m%d%H%M%S_{name}.json'
+
     def __init__(self, args):
         if 'token' in args:
             self.slack = slackclient.SlackClient(args.token)
@@ -43,6 +46,13 @@ class Client(object):
         self.session = db.Session()
         self.selected_channels = args.channels
         self.q = self.session.query
+
+        self._raw_fname = None
+        if 'raw_dir' in args and args.raw_dir:
+            if not os.path.exists(args.raw_dir):
+                os.mkdir(args.raw_dir)
+            fpath = os.path.join(args.raw_dir, self.RAW)
+            self._raw_fname = datetime.now().strftime(fpath)
 
         if 'format' in args:
             self.reporter = reporters.get_reporter(args, self.q)
@@ -72,6 +82,10 @@ class Client(object):
         if not result:
             return
 
+        if self._raw_fname:
+            with open(self._raw_fname.format("channels"), "w") as fobj:
+                fobj.write(json.dumps(result))
+
         for data in result:
             channel = self.q(o.Channel).\
                 filter(o.Channel.slackid == data['id']).one_or_none()
@@ -90,6 +104,10 @@ class Client(object):
 
         if not result:
             return
+
+        if self._raw_fname:
+            with open(self._raw_fname.format("users"), "w") as fobj:
+                fobj.write(json.dumps(result))
 
         for user_data in result:
             user = self.q(o.User).\
@@ -134,15 +152,22 @@ class Client(object):
             # starting from first January 1970.
             latest = latest and latest.ts or 1
 
+            result = []
             while True:
                 logging.debug("Fetching another portion of messages")
                 messages, latest = self._channels_history(channel, latest)
+                result.extend(messages)
 
                 for msg in messages:
                     self._create_message(msg, channel)
 
                 if latest is None:
                     break
+
+            if self._raw_fname:
+                with open(self._raw_fname.format("channel-" + channel.name),
+                          "w") as fobj:
+                    fobj.write(json.dumps(result))
 
         self.session.commit()
 
@@ -184,6 +209,12 @@ class Client(object):
             user.real_name = result['bot']['name']
             self.session.add(user)
             self.session.flush()
+
+            if self._raw_fname:
+                with open(self._raw_fname.format('bot-' + user.slackid),
+                          "w") as fobj:
+                    fobj.write(json.dumps(result))
+
             return user
 
         logging.exception('Failed on data: %s', pprint.pformat(data))

@@ -64,7 +64,8 @@ class TestConfig(unittest.TestCase):
                                           'password': None,
                                           'team': None,
                                           'token': None,
-                                          'url_file_to_attachment': False})
+                                          'url_file_to_attachment': False,
+                                          'raw_dir': None})
 
         args = argparse.Namespace()
         args.config = self.confname
@@ -99,7 +100,8 @@ class TestConfig(unittest.TestCase):
                                           'token': 'xxxx-1111111111-'
                                                    '222222222222-333333333333-'
                                                    'r4nd0ms7uff',
-                                          'url_file_to_attachment': False})
+                                          'url_file_to_attachment': False,
+                                          'raw_dir': None})
 
         # override some conf options with commandline
         args = argparse.Namespace()
@@ -127,4 +129,5 @@ class TestConfig(unittest.TestCase):
                                           'password': 'ultricies',
                                           'team': '',
                                           'token': 'the token',
-                                          'url_file_to_attachment': False})
+                                          'url_file_to_attachment': False,
+                                          'raw_dir': None})

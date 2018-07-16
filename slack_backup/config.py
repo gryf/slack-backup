@@ -17,7 +17,7 @@ class Config(object):
 
     sections = {'common': ['channels', 'database', 'quiet', 'verbose'],
                 'fetch': ['user', 'password', 'team', 'token',
-                          'url_file_to_attachment'],
+                          'url_file_to_attachment', 'raw_dir'],
                 'generate': ['output', 'format', 'theme']}
 
     def __init__(self):
@@ -38,7 +38,8 @@ class Config(object):
                          'output': None,
                          'format': None,
                          'theme': None,
-                         'url_file_to_attachment': False}
+                         'url_file_to_attachment': False,
+                         'raw_dir': None}
         # This message supposed to be displayed in INFO level. During the time
         # of running the code where it should be displayed there is no
         # complete information about logging level. Displaying message is

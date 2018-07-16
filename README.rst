@@ -90,6 +90,10 @@ where:
   created, but you'll (obviously) lost all the records. Besides the db file,
   assets directory might be created for downloadable items.
 
+You can also specify directory, where pure response JSONs from Slack API will 
+be stored by using ``-r/--raw-dir`` or by providing it in config file in 
+``fetch`` section. This might be useful for debugging purposes.
+
 There is one more switch to take into consideration -
 ``-f/--url_file_to_attachment`` which influence the way how external file
 share would be treated. First of all, what is *external* file share from slack

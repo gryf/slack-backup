@@ -156,6 +156,10 @@ class Client(object):
             while True:
                 logging.debug("Fetching another portion of messages")
                 messages, latest = self._channels_history(channel, latest)
+                if messages is None:
+                    # ignore deleted channels
+                    break
+
                 result.extend(messages)
 
                 for msg in messages:

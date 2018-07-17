@@ -83,7 +83,7 @@ class Client(object):
             return
 
         if self._raw_fname:
-            with open(self._raw_fname.format("channels"), "w") as fobj:
+            with open(self._raw_fname.format(name='channels'), 'w') as fobj:
                 fobj.write(json.dumps(result))
 
         for data in result:
@@ -106,7 +106,7 @@ class Client(object):
             return
 
         if self._raw_fname:
-            with open(self._raw_fname.format("users"), "w") as fobj:
+            with open(self._raw_fname.format(name='users'), 'w') as fobj:
                 fobj.write(json.dumps(result))
 
         for user_data in result:
@@ -169,8 +169,8 @@ class Client(object):
                     break
 
             if self._raw_fname:
-                with open(self._raw_fname.format("channel-" + channel.name),
-                          "w") as fobj:
+                with open(self._raw_fname.format(name='channel-' +
+                                                 channel.name), 'w') as fobj:
                     fobj.write(json.dumps(result))
 
         self.session.commit()
@@ -215,7 +215,7 @@ class Client(object):
             self.session.flush()
 
             if self._raw_fname:
-                with open(self._raw_fname.format('bot-' + user.slackid),
+                with open(self._raw_fname.format(name='bot-' + user.slackid),
                           "w") as fobj:
                     fobj.write(json.dumps(result))
 

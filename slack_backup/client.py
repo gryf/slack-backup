@@ -57,7 +57,8 @@ class Client(object):
         if 'format' in args:
             self.reporter = reporters.get_reporter(args, self.q)
 
-        self._url_file_to_attachment = args.url_file_to_attachment
+        if 'url_file_to_attachment' in args:
+            self._url_file_to_attachment = args.url_file_to_attachment
 
         self._dlpath = utils.get_temp_name(dir=os.path.curdir,
                                            prefix='manual_download_',

@@ -14,8 +14,9 @@ as a log.
 Requirements
 ------------
 
-This project is written in Python 3, 3.4 to be precise, although it may work on
-earlier version of Python3. Sorry no support for Python2.
+This project is written in Python 3, 3.4 to be precise (currently it works with 
+version 3.6), although it may work on earlier version of Python3. Sorry no 
+support for Python2.
 
 Other than that, required packages are as follows:
 
@@ -90,18 +91,20 @@ where:
   created, but you'll (obviously) lost all the records. Besides the db file,
   assets directory might be created for downloadable items.
 
-You can also specify directory, where pure response JSONs from Slack API will 
-be stored by using ``-r/--raw-dir`` or by providing it in config file in 
-``fetch`` section. This might be useful for debugging purposes.
+You can also specify directory, where pure response JSONs from Slack API will
+be stored by using ``-r/--raw-dir`` or by providing it in config file in
+``fetch`` section as ``raw_dir`` (note the underscore in config file contrary
+to the swith, which have hyphen between ``raw`` and ``dir``). This might be useful for
+debugging purposes.
 
 There is one more switch to take into consideration -
-``-f/--url_file_to_attachment`` which influence the way how external file
+``-f/--url-file-to-attachment`` which influence the way how external file
 share would be treated. First of all, what is *external* file share from slack
-point of view, one could ask. Slack have some sort of integration with Goolgle
-services, like Googla Drive, which provide slack users to create or "upload"
+point of view, one could ask. Slack have some sort of integration with Google
+services, like Google Drive, which provide slack users to create or "upload"
 files from Google Drive. "Upload", since no uploading actually takes place,
 and only URL is provided for such "uploads". By default `slack-backup` will
-create a file which is prefixed ``manual_download_`` which will contain url and
+create a file which is prefixed ``manual_download_`` which will contain URL and
 destination path to the file, where user should manual download file to.
 Example file contents:
 
@@ -111,10 +114,10 @@ Example file contents:
    http://foo.bar.com/some/other/file --> assets/files/8a4c873c-1864-4f1b-b515-bbef119f33a3
    http://docs/google.com/some/gdoc/file --> assets/files/ec8752bc-0bf8-4743-a8bd-9756107ab386
 
-By setting ``url_file_to_attachment`` flag (or making it set to true in config
-file) such "uploads" would be internally converted into Slack "attachment",
-which internally is an object to store external links, so there is no need for
-user interaction.
+By setting ``--url-file-to-attachment`` flag (or making an option
+``url_file_to_attachment`` set to ``true`` in config file) such "uploads" would
+be internally converted into Slack "attachment", which internally is an object
+to store external links, so there is no need for user interaction.
 
 During DB creation, all available messages are stored in the database. On the
 next run, ``fetch`` would only take those records, which are older from
@@ -167,6 +170,7 @@ For convenience, you can place all of needed options into configuration file
    password =
    team =
    token =
+   raw_dir =
 
 Note, that you don't have to put every option. To illustrate ``fetch`` example
 from above, here is a corresponding config file:

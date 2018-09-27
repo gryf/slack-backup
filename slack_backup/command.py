@@ -96,7 +96,7 @@ def main():
                        help='Use specific config file.')
     fetch.add_argument('-r', '--raw-dir', default=None,
                        help='Write raw responses to provided directory.')
-    fetch.add_argument('-f', '--url_file_to_attachment', default=False,
+    fetch.add_argument('-f', '--url-file-to-attachment', default=False,
                        action='store_true',
                        help='Treat shared files (but not uploaded to the '
                        'Slack servers) as attachment. By default there will '

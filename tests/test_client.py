@@ -258,66 +258,67 @@ MSGS = {'messages': [{"type": "message",
                      {"display_as_bot": False,
                       "subtype": "file_share",
                       "username": "<@UCCCCCCCC|name2>",
-                      "file": {"thumb_960": "https://files.slack.com/files-tmb"
-                                            "/hash/screenshot_960.png",
-                               "user": "UCCCCCCCC",
-                               "size": 77222,
-                               "thumb_1024_h": 754,
-                               "timestamp": 1479407569,
-                               "url_private_download": "https://files.slack.co"
-                                                       "m/files-pri/hsh/downlo"
-                                                       "ad/screenshot.png",
-                               "thumb_360": "https://files.slack.com/files-tmb"
-                                            "/hash/screenshot_360.png",
-                               "username": "",
-                               "external_type": "",
-                               "thumb_64": "https://files.slack.com/files-tmb/"
-                                           "hash/screenshot_64.png",
-                               "created": 1479407569,
-                               "ims": [],
-                               "groups": [],
-                               "filetype": "png",
-                               "thumb_1024": "https://files.slack.com/files-"
-                                             "tmb/hash/screenshot_1024.png",
-                               "original_w": 1193,
-                               "name": "Screenshot.png",
-                               "thumb_360_h": 265,
-                               "is_public": True,
-                               "thumb_960_h": 707,
-                               "original_h": 878,
-                               "mimetype": "image/png",
-                               "id": "F3405RRB5",
-                               "pretty_type": "PNG",
-                               "editable": False,
-                               "thumb_960_w": 960,
-                               "thumb_80": "https://files.slack.com/files-tmb/"
-                                           "hash/screenshot_80.png",
-                               "comments_count": 0,
-                               "image_exif_rotation": 1,
-                               "thumb_160": "https://files.slack.com/files-tmb"
-                                            "/hash/screenshot_160.png",
-                               "thumb_480_w": 480,
-                               "is_external": False,
-                               "display_as_bot": False,
-                               "thumb_720_h": 530,
-                               "channels": ["C00000001"],
-                               "title": "Screenshot.png",
-                               "thumb_480": "https://files.slack.com/files-tmb"
-                                            "/hash/screenshot_480.png",
-                               "url_private": "https://files.slack.com/files-"
-                                              "pri/hsh/screenshot.png",
-                               "mode": "hosted",
-                               "thumb_1024_w": 1024,
-                               "permalink": "https://esm64.slack.com/files/"
-                                            "name2/F3405RRB5/screenshot.png",
-                               "thumb_480_h": 353,
-                               "public_url_shared": False,
-                               "thumb_720": "https://files.slack.com/files-tmb"
-                                            "/hash/screenshot_720.png",
-                               "thumb_360_w": 360,
-                               "permalink_public": "https://slack-files.com/"
-                                                   "hsh-7dbb96b758",
-                               "thumb_720_w": 720},
+                      "files": [{"thumb_960": "https://files.slack.com/files-"
+                                              "tmb/hash/screenshot_960.png",
+                                 "user": "UCCCCCCCC",
+                                 "size": 77222,
+                                 "thumb_1024_h": 754,
+                                 "timestamp": 1479407569,
+                                 "url_private_download": "https://files.slack."
+                                                         "com/files-pri/hsh/do"
+                                                         "wnload/screenshot.pn"
+                                                         "g",
+                                 "thumb_360": "https://files.slack.com/files-"
+                                              "tmb/hash/screenshot_360.png",
+                                 "username": "",
+                                 "external_type": "",
+                                 "thumb_64": "https://files.slack.com/files-"
+                                             "tmb/hash/screenshot_64.png",
+                                 "created": 1479407569,
+                                 "ims": [],
+                                 "groups": [],
+                                 "filetype": "png",
+                                 "thumb_1024": "https://files.slack.com/files-"
+                                               "tmb/hash/screenshot_1024.png",
+                                 "original_w": 1193,
+                                 "name": "Screenshot.png",
+                                 "thumb_360_h": 265,
+                                 "is_public": True,
+                                 "thumb_960_h": 707,
+                                 "original_h": 878,
+                                 "mimetype": "image/png",
+                                 "id": "F3405RRB5",
+                                 "pretty_type": "PNG",
+                                 "editable": False,
+                                 "thumb_960_w": 960,
+                                 "thumb_80": "https://files.slack.com/files-"
+                                             "tmb/hash/screenshot_80.png",
+                                 "comments_count": 0,
+                                 "image_exif_rotation": 1,
+                                 "thumb_160": "https://files.slack.com/files-"
+                                              "tmb/hash/screenshot_160.png",
+                                 "thumb_480_w": 480,
+                                 "is_external": False,
+                                 "display_as_bot": False,
+                                 "thumb_720_h": 530,
+                                 "channels": ["C00000001"],
+                                 "title": "Screenshot.png",
+                                 "thumb_480": "https://files.slack.com/files-"
+                                              "tmb/hash/screenshot_480.png",
+                                 "url_private": "https://files.slack.com/files"
+                                                "-pri/hsh/screenshot.png",
+                                 "mode": "hosted",
+                                 "thumb_1024_w": 1024,
+                                 "permalink": "https://esm64.slack.com/files/"
+                                              "name2/F3405RRB5/screenshot.png",
+                                 "thumb_480_h": 353,
+                                 "public_url_shared": False,
+                                 "thumb_720": "https://files.slack.com/files-"
+                                              "tmb/hash/screenshot_720.png",
+                                 "thumb_360_w": 360,
+                                 "permalink_public": "https://slack-files.com/"
+                                                     "hsh-7dbb96b758",
+                                 "thumb_720_w": 720}],
                       "type": "message",
                       "user": "UCCCCCCCC",
                       "bot_id": None,
@@ -360,7 +361,7 @@ SHARED = {"type": "message",
           "text": "<@UAAAAAAAA> shared a file: <https://bla."
           "slack.com/files/name%20lastname/F7ARMB4JU/17|"
           "some_spreadsheet>",
-          "file": {
+          "files": [{
                    "id": "F6ABMB0Ja",
                    "created": 1479147929,
                    "timestamp": 1479147929,
@@ -394,7 +395,7 @@ SHARED = {"type": "message",
                    "ims": [],
                    "comments_count": 0,
                    "has_rich_preview": True
-                  },
+                  }],
           "user": 'UAAAAAAAA',
           "upload": False,
           "display_as_bot": False,
@@ -423,7 +424,7 @@ PINNED = {'attachments': [{'fallback': 'blah',
 
 EXTERNAL_DATA = {"bot_id": None,
                  "display_as_bot": False,
-                 "file": {
+                 "files": [{
                           "channels": [
                                        "xxx"
                                       ],
@@ -487,86 +488,86 @@ EXTERNAL_DATA = {"bot_id": None,
                           "groups": [],
                           "ims": [],
                           "comments_count": 0,
-                          "has_rich_preview": True},
+                          "has_rich_preview": True}],
                  "user": "xxx",
                  "upload": False,
                  "username": "xxx"}
 
 INTERNAL_DATA = {"bot_id": None,
                  "display_as_bot": False,
-                 "file": {"channels": ["zzz"],
-                          "comments_count": 1,
-                          "created": 1524724681,
-                          "display_as_bot": False,
-                          "editable": False,
-                          "external_type": "",
-                          "filetype": "jpg",
-                          "groups": [],
-                          "id": "id",
-                          "image_exif_rotation": 1,
-                          "ims": [],
-                          "initial_comment": {"comment": "bla",
-                                              "created": 1524724681,
-                                              "id": "yyy",
-                                              "is_intro": True,
-                                              "timestamp": 1524724681,
-                                              "user": "UAAAAAAAA"},
-                          "is_external": False,
-                          "is_public": True,
-                          "mimetype": "image/jpeg",
-                          "mode": "hosted",
-                          "name": "img.jpg",
-                          "original_h": 768,
-                          "original_w": 1080,
-                          "permalink": "https://fake.slack.com/files/"
-                                       "UAAAAAAAA/id/img.jpg",
-                          "permalink_public": "https://slack-files.com/"
-                                              "TXXXXXX-id-3de9b969d2",
-                          "pretty_type": "JPEG",
-                          "public_url_shared": False,
-                          "reactions": [{"count": 1,
-                                         "name": "thinking_face",
-                                         "users": ["U6P9KEALW"]}],
-                          "size": 491335,
-                          "thumb_1024": "https://files.slack.com/files-tmb/"
-                                        "TXXXXXX-id-123/img_1024.jpg",
-                          "thumb_1024_h": 728,
-                          "thumb_1024_w": 1024,
-                          "thumb_160": "https://files.slack.com/files-tmb/"
-                                       "TXXXXXX-id-123/img_160.jpg",
-                          "thumb_360": "https://files.slack.com/files-tmb/"
-                                       "TXXXXXX-id-123/img_360.jpg",
-                          "thumb_360_h": 256,
-                          "thumb_360_w": 360,
-                          "thumb_480": "https://files.slack.com/files-tmb/"
-                                       "TXXXXXX-id-123/img_480.jpg",
-                          "thumb_480_h": 341,
-                          "thumb_480_w": 480,
-                          "thumb_64": "https://files.slack.com/files-tmb/"
-                                      "TXXXXXX-id-123/img_64.jpg",
-                          "thumb_720": "https://files.slack.com/files-tmb/"
-                                       "TXXXXXX-id-123/img_720.jpg",
-                          "thumb_720_h": 512,
-                          "thumb_720_w": 720,
-                          "thumb_80": "https://files.slack.com/files-tmb/"
-                                      "TXXXXXX-id-123/img_80.jpg",
-                          "thumb_800": "https://files.slack.com/files-tmb/"
-                                       "TXXXXXX-id-123/img_800.jpg",
-                          "thumb_800_h": 569,
-                          "thumb_800_w": 800,
-                          "thumb_960": "https://files.slack.com/files-tmb/"
-                                       "TXXXXXX-id-123/img_960.jpg",
-                          "thumb_960_h": 683,
-                          "thumb_960_w": 960,
-                          "timestamp": 1524724681,
-                          "title": "img.jpg",
-                          "url_private": "https://files.slack.com/files-pri/"
-                                         "TXXXXXX-id/img.jpg",
-                          "url_private_download": "https://files.slack.com/"
-                                                  "files-pri/TXXXXXX-id/"
-                                                  "download/img.jpg",
-                          "user": "UAAAAAAAA",
-                          "username": ""},
+                 "files": [{"channels": ["zzz"],
+                            "comments_count": 1,
+                            "created": 1524724681,
+                            "display_as_bot": False,
+                            "editable": False,
+                            "external_type": "",
+                            "filetype": "jpg",
+                            "groups": [],
+                            "id": "id",
+                            "image_exif_rotation": 1,
+                            "ims": [],
+                            "initial_comment": {"comment": "bla",
+                                                "created": 1524724681,
+                                                "id": "yyy",
+                                                "is_intro": True,
+                                                "timestamp": 1524724681,
+                                                "user": "UAAAAAAAA"},
+                            "is_external": False,
+                            "is_public": True,
+                            "mimetype": "image/jpeg",
+                            "mode": "hosted",
+                            "name": "img.jpg",
+                            "original_h": 768,
+                            "original_w": 1080,
+                            "permalink": "https://fake.slack.com/files/"
+                                         "UAAAAAAAA/id/img.jpg",
+                            "permalink_public": "https://slack-files.com/"
+                                                "TXXXXXX-id-3de9b969d2",
+                            "pretty_type": "JPEG",
+                            "public_url_shared": False,
+                            "reactions": [{"count": 1,
+                                           "name": "thinking_face",
+                                           "users": ["U6P9KEALW"]}],
+                            "size": 491335,
+                            "thumb_1024": "https://files.slack.com/files-tmb/"
+                                          "TXXXXXX-id-123/img_1024.jpg",
+                            "thumb_1024_h": 728,
+                            "thumb_1024_w": 1024,
+                            "thumb_160": "https://files.slack.com/files-tmb/"
+                                         "TXXXXXX-id-123/img_160.jpg",
+                            "thumb_360": "https://files.slack.com/files-tmb/"
+                                         "TXXXXXX-id-123/img_360.jpg",
+                            "thumb_360_h": 256,
+                            "thumb_360_w": 360,
+                            "thumb_480": "https://files.slack.com/files-tmb/"
+                                         "TXXXXXX-id-123/img_480.jpg",
+                            "thumb_480_h": 341,
+                            "thumb_480_w": 480,
+                            "thumb_64": "https://files.slack.com/files-tmb/"
+                                        "TXXXXXX-id-123/img_64.jpg",
+                            "thumb_720": "https://files.slack.com/files-tmb/"
+                                         "TXXXXXX-id-123/img_720.jpg",
+                            "thumb_720_h": 512,
+                            "thumb_720_w": 720,
+                            "thumb_80": "https://files.slack.com/files-tmb/"
+                                        "TXXXXXX-id-123/img_80.jpg",
+                            "thumb_800": "https://files.slack.com/files-tmb/"
+                                         "TXXXXXX-id-123/img_800.jpg",
+                            "thumb_800_h": 569,
+                            "thumb_800_w": 800,
+                            "thumb_960": "https://files.slack.com/files-tmb/"
+                                         "TXXXXXX-id-123/img_960.jpg",
+                            "thumb_960_h": 683,
+                            "thumb_960_w": 960,
+                            "timestamp": 1524724681,
+                            "title": "img.jpg",
+                            "url_private": "https://files.slack.com/files-pri/"
+                                           "TXXXXXX-id/img.jpg",
+                            "url_private_download": "https://files.slack.com/"
+                                                    "files-pri/TXXXXXX-id/"
+                                                    "download/img.jpg",
+                            "user": "UAAAAAAAA",
+                            "username": ""}],
                  "subtype": "file_share",
                  "text": "<@UAAAAAAAA> uploaded a file: <https://fake.slack."
                          "com/files/UAAAAAAAA/id/img.jpg|img.jpg> and "
@@ -749,22 +750,7 @@ class TestCreateMessage(unittest.TestCase):
         self.assertTrue('shared a file' in msg.text)
         self.assertFalse(msg.is_starred)
         self.assertEqual(msg.type, 'file_share')
-        fd.assert_called_once_with(msg, SHARED['file'])
-
-    @mock.patch('slack_backup.client.Client._get_user')
-    def test_external_file_upload_as_attachment(self, gu):
-        cl = client.Client(FakeArgs())
-        cl.downloader._download = mock.MagicMock(return_value='aa')
-        cl.session = mock.MagicMock()
-        cl._url_file_to_attachment = True
-        channel = o.Channel({'name': 'test', 'id': 'C00000001'})
-
-        cl._create_message(SHARED, channel)
-
-        msg = cl.session.add.call_args[0][0]
-        self.assertEqual(len(msg.attachments), 1)
-        self.assertTrue('shared a file' in msg.text)
-        self.assertFalse(msg.is_starred)
+        fd.assert_called_once_with(msg, SHARED['files'][0])
 
     @mock.patch('slack_backup.client.Client._file_data')
     @mock.patch('slack_backup.client.Client._get_user')
@@ -793,17 +779,17 @@ class TestFileShare(unittest.TestCase):
     def test_file_data(self, md, dl):
         dl.side_effect = ['some_path']
 
-        url = INTERNAL_DATA['file']['url_private_download']
+        url = INTERNAL_DATA['files'][0]['url_private_download']
 
         cl = client.Client(FakeArgs())
         cl.downloader._download = mock.MagicMock(return_value=url)
         cl.session = mock.MagicMock()
 
         msg = o.Message()
-        cl._file_data(msg, INTERNAL_DATA['file'])
+        cl._file_data(msg, INTERNAL_DATA['files'][0])
 
-        self.assertIsNotNone(msg.file)
-        self.assertEqual(msg.file.filepath, 'some_path')
+        self.assertIsNotNone(msg.files)
+        self.assertEqual(msg.files[0].filepath, 'some_path')
 
     @mock.patch('slack_backup.download.Download.download')
     @mock.patch('slack_backup.utils.makedirs')
@@ -811,15 +797,15 @@ class TestFileShare(unittest.TestCase):
         dl.side_effect = ['some_path']
 
         data = copy.deepcopy(INTERNAL_DATA)
-        data['file']['is_starred'] = True
-        url = data['file']['url_private_download']
+        data['files'][0]['is_starred'] = True
+        url = data['files'][0]['url_private_download']
 
         cl = client.Client(FakeArgs())
         cl.downloader._download = mock.MagicMock(return_value=url)
         cl.session = mock.MagicMock()
 
         msg = o.Message()
-        cl._file_data(msg, data['file'])
+        cl._file_data(msg, data['files'][0])
 
         self.assertTrue(msg.is_starred)
 
@@ -829,8 +815,6 @@ class TestFileShare(unittest.TestCase):
     def test_external_file_data(self, md, dl, uuid):
         uuid.side_effect = ['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee']
         dl.side_effect = ['some_path']
-
-        # url = EXTERNAL_DATA['file']['url_private']
 
         cl = client.Client(FakeArgs())
         cl.session = mock.MagicMock()
@@ -843,7 +827,7 @@ class TestFileShare(unittest.TestCase):
                          'usp=drivesdk --> '
                          'assets/files/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\n')
 
-        cl._file_data(msg, EXTERNAL_DATA['file'])
+        cl._file_data(msg, EXTERNAL_DATA['files'][0])
         file_ = cl.session.add.call_args[0][0]
         self.assertEqual(cl._dldata, [expexted_line])
         self.assertEqual(file_.filepath,

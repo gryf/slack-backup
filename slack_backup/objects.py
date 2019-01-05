@@ -228,7 +228,7 @@ class Message(Base):
     channel = relationship("Channel", back_populates="messages")
 
     reactions = relationship("Reaction", back_populates="message")
-    file = relationship("File", uselist=False, back_populates="message")
+    files = relationship("File", back_populates="message")
     attachments = relationship("Attachment", back_populates="message")
 
     def __init__(self, data_dict=None):
@@ -255,7 +255,7 @@ class File(Base):
     filepath = Column(Text)
 
     message_id = Column(Integer, ForeignKey('messages.id'))
-    message = relationship('Message', back_populates='file')
+    message = relationship('Message', back_populates='files')
 
     def __init__(self, data_dict=None):
         self.update(data_dict)

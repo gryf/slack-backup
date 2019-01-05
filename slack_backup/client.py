@@ -238,7 +238,8 @@ class Client(object):
 
         user = self._get_user(data)
 
-        if not any((data.get('attachments'), data['text'].strip())):
+        if not any((data.get('attachments'), data['text'].strip(),
+                    data.get('files'))):
             logging.info("Skipping message from `%s' since it's empty",
                          user.name)
             return
@@ -254,22 +255,25 @@ class Client(object):
             for reaction_data in data['reactions']:
                 message.reactions.append(o.Reaction(reaction_data))
 
-        if data.get('subtype') == 'file_share':
-            if (self._url_file_to_attachment and
-                    data['file'].get('is_external')):
-                fdata = data['file']
-                # change message type from file_share to default
-                message.type = ''
-                message.text = (message.text.split('shared a file:')[0] +
-                                'shared a file: ')
-                logging.debug("Found external file `%s'. Saving as "
-                              "attachment.", fdata['url_private'])
-                self._att_data(message, [{'title': fdata['name'],
-                                          'text': fdata['url_private'],
-                                          'fallback': ''}])
-            else:
-                self._file_data(message, data['file'])
-        elif data.get('subtype') == 'pinned_item':
+        if data.get('files'):
+            for fdata in data['files']:
+                if (self._url_file_to_attachment and fdata.get('is_external')):
+                    logging.info('got external file')
+                    message.text = (message.text.split('shared a file:')[0] +
+                                    'shared a file: ')
+                    logging.debug("Found external file `%s'. Saving as "
+                                  "attachment.", fdata['url_private'])
+                    self._att_data(message, [{'title': fdata['name'],
+                                              'text': fdata['url_private'],
+                                              'fallback': ''}])
+                else:
+                    self._file_data(message, fdata)
+
+        # TODO(gryf): subtype pinned_item coexistsing with pinned_info message
+        # key :C
+        # pinned_info however is just a mark, which point to the channlel
+        # where it is pinned to, who did that and when. To be resolved.
+        if data.get('subtype') == 'pinned_item':
             if data.get('attachments'):
                 self._att_data(message, data['attachments'])
             elif data.get('item'):
@@ -284,26 +288,34 @@ class Client(object):
         Process file data. Could be either represented as 'file' object or
         'item' object in case of pinned items
         """
-        message.file = o.File(data)
+        _file = o.File(data)
+        message.files.append(_file)
+
+        if data.get('mode') == 'tombstone':
+            _file.title = 'This file was deleted'
+            return
+
         if data.get('is_starred'):
             message.is_starred = True
 
         if data.get('is_external'):
             # Create a link and corresponding file name for manual download
             fname = str(uuid.uuid4())
-            message.file.filepath = self.downloader.get_filepath(fname, 'file')
+            _file.filepath = self.downloader.get_filepath(fname, 'file')
             logging.info("Please, manually download an external file from "
                          "URL `%s' to `%s'", data['url_private'],
-                         message.file.filepath)
+                         _file.filepath)
             self._dldata.append('%s --> %s\n' % (data['url_private'],
-                                                 message.file.filepath))
-            message.file.url = data['url_private']
+                                                 _file.filepath))
+            _file.url = data['url_private']
         else:
             logging.debug("Found internal file `%s'",
                           data['url_private_download'])
             priv_url = data['url_private_download']
-            message.file.filepath = self.downloader.download(priv_url, 'file')
-        self.session.add(message.file)
+            _file.filepath = self.downloader.download(priv_url, 'file',
+                                                      data.get('filetype'))
+
+        self.session.add(_file)
 
     def _att_data(self, message, data):
         """

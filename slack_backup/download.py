@@ -60,7 +60,7 @@ class Download(object):
         self._hier_created = False
         self.cookies = {}
 
-    def download(self, url, filetype):
+    def download(self, url, filetype, ext=None):
         """
         Download asset, return local path to it
         """
@@ -68,7 +68,7 @@ class Download(object):
         if not self._hier_created:
             self._create_assets_dir()
 
-        filepath = self.get_filepath(url, filetype)
+        filepath = self.get_filepath(url, filetype, ext)
         temp_file = utils.get_temp_name()
 
         self._download(url, temp_file)
@@ -95,7 +95,7 @@ class Download(object):
 
         self._hier_created = True
 
-    def get_filepath(self, url, filetype):
+    def get_filepath(self, url, filetype, ext=None):
         """Get full path and filename for the file"""
 
         typemap = {'avatar': self._images,
@@ -122,6 +122,9 @@ class Download(object):
         if part:
             utils.makedirs(os.path.join(path, part))
             path = os.path.join(path, part)
+
+        if ext and not fname.endswith(ext):
+            fname = fname + "." + ext
 
         return os.path.join(path, fname)
 

@@ -34,6 +34,7 @@ class Reporter(object):
     literal_url_pat = re.compile(r'(?P<replace>(?P<url>https?[^\s\|]+))')
     url_pat = re.compile(r'(?P<replace><(?P<url>http[^\|>]+)'
                          r'(\|(?P<title>[^>]+))?>)')
+    url2_pat = re.compile(r'<(?P<url>https?[^\s\|]+)>')
     slackid_pat = re.compile(r'(?P<replace><@'
                              r'(?P<slackid>U[A-Z,0-9]+)(\|[^>]+)?[^>]*>)')
 
@@ -44,7 +45,7 @@ class Reporter(object):
         self.types = {"channel_join": self._msg_join,
                       "channel_leave": self._msg_leave,
                       "channel_topic": self._msg_topic,
-                      "file_share": self._msg_file,
+                      # "file_share": self._msg_file,
                       "me_message": self._msg_me}
 
         self.emoji = emoji.EMOJI.get(args.theme, {})
@@ -66,18 +67,25 @@ class Reporter(object):
                     filter(o.Message.channel == channel).\
                     order_by(o.Message.ts).all():
                 messages.append(message)
-            self.write_msg(messages, log_path)
+            self.write_msg(messages, log_path, channel)
 
     def get_log_path(self, name):
         """Return relative log file name """
         return os.path.join(self.out, name + self.ext)
 
-    def write_msg(self, messages, log):
+    def write_msg(self, messages, log, channel):
         """Write message to file"""
         with open(log, "a", encoding='utf8') as fobj:
             for message in messages:
                 data = self._process_message(message)
                 fobj.write(data['tpl'].format(**data))
+                if message.files:
+                    for _file in message.files:
+                        data = self._msg_file(message, _file)
+                        fobj.write(data['tpl'].format(**data))
+                # else:
+                    # data = self._process_message(message)
+                    # fobj.write(data['tpl'].format(**data))
 
     def _get_symbol(self, item):
         """Return appropriate item depending on the selected theme"""
@@ -134,7 +142,7 @@ class Reporter(object):
         return {'msg': msg.user.name + ' ' + msg.text,
                 'nick': self._get_symbol('me')}
 
-    def _msg_file(self, msg):
+    def _msg_file(self, msg, _file):
         """return data for file"""
         return {'msg': msg.text,
                 'nick': self._get_symbol('file')}
@@ -194,7 +202,7 @@ class TextReporter(Reporter):
                     order_by(o.Message.ts).all():
                 messages.append(message)
 
-            self.write_msg(messages, log_path)
+            self.write_msg(messages, log_path, channel)
 
     def _set_max_len(self, channel):
         """calculate max_len for sepcified channel"""
@@ -221,17 +229,20 @@ class TextReporter(Reporter):
                      'tpl': self.tpl})
         return data
 
-    def _msg_file(self, msg):
+    def _msg_file(self, message, _file):
         """return data for file"""
-        if msg.file.filepath:
-            fpath = os.path.abspath(msg.file.filepath)
+        if _file.filepath:
+            fpath = os.path.abspath(_file.filepath)
             fpath = pathlib.PurePath(fpath).as_uri()
         else:
             fpath = 'does_not_exists'
 
-        return {'msg': self.url_pat.sub('(' + fpath + ') ' + msg.file.title,
-                                        msg.text),
-                'nick': self._get_symbol('file')}
+        return {'msg': _file.title + ' ' + fpath,
+                'nick': self._get_symbol('file'),
+                'date': message.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                'max_len': self._max_len,
+                'separator': self._get_symbol('separator'),
+                'tpl': self.tpl}
 
     def _msg(self, msg):
         """return data for all other message types"""
@@ -293,7 +304,9 @@ class StaticHtmlReporter(Reporter):
         <html>
         <head>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
-        <title>Bla</title>
+        <title>%(title)s</title>
+        """
+    msg_style = """
         <style>
         * {
             font-family: sans-serif;
@@ -313,6 +326,10 @@ class StaticHtmlReporter(Reporter):
         }
         td {
             padding: 2px;
+        }
+        img {
+            max-height: 300px;
+            max-widht: 500px;
         }
         </style>
         </head>
@@ -349,12 +366,16 @@ class StaticHtmlReporter(Reporter):
                        'msgs': self.index_list % self._get_index_list()}
             fobj.write(self.index_templ % content)
 
-    def write_msg(self, messages, log):
+    def write_msg(self, messages, log, channel):
         """Write message to file"""
         with open(log, "w", encoding='utf8') as fobj:
-            fobj.write(self.msg_head)
+            title = channel.name
+            if channel.topic:
+                title = channel.name + ' ' + channel.topic.value
+            fobj.write(self.msg_head % {'title': title})
+            fobj.write(self.msg_style)
 
-        super(StaticHtmlReporter, self).write_msg(messages, log)
+        super(StaticHtmlReporter, self).write_msg(messages, log, channel)
 
         with open(log, "a", encoding='utf8') as fobj:
             fobj.write(self.msg_foot)
@@ -377,29 +398,46 @@ class StaticHtmlReporter(Reporter):
                      'tpl': self.msg_line})
         return data
 
-    def _msg_file(self, msg):
+    def _msg_file(self, msg, _file):
         """return data for file"""
-        if msg.file.filepath:
-            fpath = os.path.abspath(msg.file.filepath)
+        if _file.filepath:
+            fpath = os.path.abspath(_file.filepath)
             fpath = pathlib.PurePath(fpath).as_uri()
         else:
             fpath = 'does_not_exists'
 
         _, ext = os.path.splitext(fpath)
         if ext.lower() in ('.png', '.jpg', '.jpeg', '.gif'):
-            url = ('<img src="' + fpath + '" height="300" alt="' +
-                   msg.file.title + '">')
+            url = ('<img src="' + fpath + '" alt="' +
+                   _file.title + '">')
         else:
-            url = ('<a href="' + fpath + '">' + msg.file.title + '</a>')
+            url = ('<a href="' + fpath + '">' + _file.title + '</a>')
 
-        return {'msg': self.url_pat.sub(url, msg.text),
+        data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
+                'msg': self._filter_slackid(url + _file.title),
+                'tpl': self.msg_line,
                 'nick': self._get_symbol('file')}
+
+        for emoticon in self.emoji:
+            data['msg'] = data['msg'].replace(emoticon, self.emoji[emoticon])
+
+        return data
 
     def _msg(self, msg):
         """return processor for all other message types"""
 
+        match = self.url2_pat.match(msg.text)
+        text = msg.text
+        if match:
+            text = ''
+            for part in self.url2_pat.split(msg.text):
+                if 'http' in part:
+                    text += '<a href="' + part + '">' + part + '</a>'
+                else:
+                    text += part
+
         data = {'date': msg.datetime().strftime("%Y-%m-%d %H:%M:%S"),
-                'msg': msg.text,
+                'msg': text,
                 'nick': msg.user.name}
 
         link = '<a href="{url}">{title}</a>'

@@ -85,11 +85,10 @@ class Download(object):
                 logging.debug("File `%s' already exist, skipping", filepath)
                 os.unlink(filepath)
         else:
-            if temp_file == ".gif":
-                temp_file = "generic.gif"
-            shutil.move(temp_file, filepath)
-
-
+             basename, ext = os.path.splitext(temp_file)
+             if not basename:
+               temp_file = 'generic' + ext
+             shutil.move(temp_file, filepath)
         return filepath
 
     def _create_assets_dir(self):

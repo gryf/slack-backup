@@ -7,6 +7,8 @@ Slack backup
 .. image:: https://img.shields.io/pypi/v/slack-backup.svg
     :target: https://pypi.python.org/pypi/slack-backup
 
+**This project has been archived.**
+
 The project aim is to collect conversations from Slack using its API and
 optionally user account information, and provides convenient way to represent
 as a log.
@@ -14,8 +16,8 @@ as a log.
 Requirements
 ------------
 
-This project is written in Python 3, 3.4 to be precise (currently it works with 
-version 3.6), although it may work on earlier version of Python3. Sorry no 
+This project is written in Python 3, 3.4 to be precise (currently it works with
+version 3.6), although it may work on earlier version of Python3. Sorry no
 support for Python2.
 
 Other than that, required packages are as follows:
